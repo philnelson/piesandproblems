@@ -207,12 +207,25 @@ function loadSounds()
 end
 
 function positionBaddie()
-	-- position the Orc
-	orcX = gridSize * math.random(1,screenWidth)
-	orcY = 0
+	goodX = false
+	goodY = false
 
-	while orcY < 144 do
-		orcY = gridSize * math.random(2,screenHeight)
+	while goodX == false do
+		orcX = (gridSize * math.random(1,screenWidth))+24
+		if orcX > gridSize*2-(gridSize/2) then
+			if orcX < (screenWidth*gridSize)-(gridSize/2) then
+				goodX = true
+			end
+		end
+	end
+
+	while goodY == false do
+		orcY = (gridSize * math.random(1,screenHeight))+24
+		if orcY > topMenuHeight+gridSize*2-(gridSize/2) then
+			if orcY < (screenHeight*gridSize)-(gridSize/2) then
+				goodY = true
+			end
+		end
 	end
 end
 
