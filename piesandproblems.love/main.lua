@@ -1,5 +1,5 @@
-screenWidth = 15
-screenHeight = 15
+screenWidth = 21
+screenHeight = 16
 
 gridSize = 48
 
@@ -15,60 +15,49 @@ love.audio.setMode( love.audio_quality_low, 1, 8 )
 love.graphics.setLineStyle( love.line_rough )
 love.graphics.setLineWidth( 4 )
 
+-- First two rows are covered by the display
+map = {
+	{190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190},
+	{190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190},
+	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,25,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
+	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
+}
+
 turn = 0
+currentFloor = 0
 
 volume = .5
 
 love.audio.setVolume(volume)
 
-topMenuHeight = 96
+topMenuHeight = gridSize*2
 
 elapsed = 0
 lastkey = 0
+animationsRun = 0
 
 optionsOpen = false
 orcIsHit = false
 
 function load()
-
-	charSpriteX = 0
-	charSpriteY = gridSize*29
-	-- Position character
+	positionCharacter()
+	positionBaddie()
 	
-	charX = gridSize * math.random(1,20)
-	charY = gridSize * math.random(3,15)
-	while charX < 48 do
-		charY = gridSize * math.random(1,20)
-	end
-	while charY < 144 do
-		charY = gridSize * math.random(3,15)
-	end
-
-	arrowX = charX
-	arrowY = charY
-
-	charIsFacing = "right"
-	arrowFiredFrom = charIsFacing
-
-	-- position the Orc
-	orcX = gridSize * math.random(1,20)
-	orcY = 0
-
 	arrowIsUp = false
 
-	while orcY < 144 do
-		orcY = gridSize * math.random(2,15)
-	end
-
-	overWorldTheme = love.audio.newSound('Mr Fluff.ogg')
-
-	charSwordSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/attack03.wav')
-	charShootSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/rocket01.wav')
-
-	weaponHitSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact01.wav')
-	weaponHitSound2 = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact02.wav')
-
-	uiOpenSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/open01.wav')
+	loadSounds()
 
 	headerFont = love.graphics.newFont('04B_03__.TTF', 48)
 	font = love.graphics.newFont('04B_03__.TTF', 24)
@@ -77,26 +66,29 @@ function load()
 	sprites = love.graphics.newImage( 'lofi_char_a_48.png' )
 	environment = love.graphics.newImage( 'lofi_environment_a_48.png' )
 	objects = love.graphics.newImage( 'lofi_obj_a_48.png' )
-	
+
 	love.audio.play( overWorldTheme, 0 )
 end
 
 function draw()
-	love.graphics.setColor( 242, 220, 144 )
-	love.graphics.rectangle( 0, 0, topMenuHeight, width, height-96 )
-	love.graphics.setColor( 56, 50, 34 )
-	love.graphics.rectangle(0,48,topMenuHeight+48,width-96, (height-144)-(topMenuHeight))
-	love.graphics.setColor( 255, 255, 255 )
+	generateRoom(currentFloor)
 	
+	love.graphics.setColor( 255, 255, 0 )
+	for y=0, screenHeight do
+		for x=0, screenWidth do                                                         
+			--love.graphics.line( x*gridSize, 0, x*gridSize, (screenHeight)*gridSize )
+		end
+	--	love.graphics.line( 0, y*gridSize, (screenWidth)*gridSize, y*gridSize )
+	end
+	
+	-- draw UI text
+	love.graphics.setColor( 255, 255, 255 )
 	love.graphics.draw("Turns: " .. turn, 5, 32)
 	love.graphics.draw("X: " .. charX .. " Y:" .. charY, 5, 50)
 	love.graphics.draw("Arrow: "..arrowX..','..arrowY, 5, 70)
 	
 	love.graphics.draws( sprites, charX, charY, charSpriteX, charSpriteY, gridSize, gridSize)
 	love.graphics.draws( sprites, orcX, orcY, 480, 384, gridSize, gridSize)
-	
-	love.graphics.draws(environment, 192, 576, 672,525,gridSize,gridSize)
-	love.graphics.draws(environment, 576, 192, 480,288,gridSize,gridSize)
 	
 	if optionsOpen == true then
 		love.graphics.setColor( 255, 255, 255 )
@@ -128,10 +120,12 @@ function draw()
 	if orcIsHit == true then
 		love.graphics.draws(objects, orcX, orcY, 192,240,gridSize,gridSize)
 	end
-	
+
 end
 
 function update(dt)
+	elapsed = elapsed+dt
+
 	if arrowIsUp == true then
 		if arrowFiredFrom == "up" then
 			arrowY = arrowY-(dt*500)
@@ -146,7 +140,6 @@ function update(dt)
 			arrowX = arrowX-(dt*500)
 		end
 	end
-	
 end
 
 function keypressed(key)
@@ -201,6 +194,66 @@ function keypressed(key)
 	lastkey = key
 end
 
+function loadSounds()
+	overWorldTheme = love.audio.newSound('Mr Fluff.ogg')
+
+	charSwordSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/attack03.wav')
+	charShootSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/rocket01.wav')
+
+	weaponHitSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact01.wav')
+	weaponHitSound2 = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact02.wav')
+
+	uiOpenSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/open01.wav')
+end
+
+function positionBaddie()
+	-- position the Orc
+	orcX = gridSize * math.random(1,screenWidth)
+	orcY = 0
+
+	while orcY < 144 do
+		orcY = gridSize * math.random(2,screenHeight)
+	end
+end
+
+function positionCharacter()
+	charSpriteX = 0
+	charSpriteY = gridSize*29
+
+	-- Position character
+
+	charX = 0
+	charY = 0
+
+	goodX = false
+	goodY = false
+
+	while goodX == false do
+		charX = (gridSize * math.random(1,screenWidth))+24
+		if charX > gridSize*2-(gridSize/2) then
+			if charX < (screenWidth*gridSize)-(gridSize/2) then
+				goodX = true
+			end
+		end
+	end
+
+	while goodY == false do
+		charY = (gridSize * math.random(1,screenHeight))+24
+		if charY > topMenuHeight+gridSize*2-(gridSize/2) then
+			if charY < (screenHeight*gridSize)-(gridSize/2) then
+				goodY = true
+			end
+		end
+	end
+	
+	arrowX = charX
+	arrowY = charY
+
+	charIsFacing = "right"
+	arrowFiredFrom = charIsFacing
+	
+end
+
 function charAttack()
 	love.audio.play(charSwordSound)
 	orcIsHit = true
@@ -218,7 +271,7 @@ end
 
 function moveLeft()
 	charSpriteX = 96
-	if (charX-gridSize) > (gridSize/2) then
+	if (charX-gridSize) >= (gridSize) then
 		if charX-gridSize == orcX then
 			if charY == orcY then
 				charAttack()
@@ -235,7 +288,7 @@ end
 
 function moveRight()
 	charSpriteX = 0
-	if (charX+gridSize) < width then
+	if (charX+gridSize) <= (width)-gridSize then
 		if charX+gridSize == orcX then
 			if charY == orcY then
 				charAttack()
@@ -252,7 +305,7 @@ end
 
 function moveUp()
 	charSpriteX = 144
-	if (charY-gridSize) > 120 then
+	if (charY-gridSize) > (gridSize*2)+(gridSize/2) then
 		if charY-gridSize == orcY then
 			if charX == orcX then
 				charAttack()
@@ -269,7 +322,7 @@ end
 
 function moveDown()
 	charSpriteX = 48
-	if (charY+gridSize) < height then
+	if (charY+gridSize) < (height-gridSize) then
 		if charY+gridSize == orcY then
 			if charX == orcX then
 				charAttack()
@@ -294,7 +347,24 @@ function showOptions()
 end
 
 function generateRoom(floor)
-	if floor == 1 then
-		
+	-- draw main background
+	love.graphics.setColor( 242, 220, 144 )
+	love.graphics.rectangle( 0, 0, topMenuHeight, width, height )
+	-- draw secondary background
+	love.graphics.setColor( 56, 50, 34 )
+	love.graphics.rectangle(0,48,topMenuHeight+48,width-96, (height-96)-(topMenuHeight))
+
+	for y=3, screenHeight do
+		for x=1, screenWidth do
+			envSpriteY = math.floor((map[y][x]*48)/768)
+			envSpriteX = map[y][x]
+			while (envSpriteX > 16) do
+				envSpriteX = envSpriteX - 16
+			end
+			if(envSpriteX < 0) then
+				envSpriteX = 0
+			end
+			love.graphics.draws( environment, (x*gridSize)-24, (y*gridSize)-24, (envSpriteX*gridSize), (envSpriteY*gridSize),gridSize, gridSize )
+		end
 	end
 end
