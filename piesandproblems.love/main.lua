@@ -35,8 +35,18 @@ map = {
 	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
 }
 
-downStairsLocationX = math.random(2,20)
-downStairsLocationY = math.random(1,15)
+orcStats = {vitality='alive',hp=math.random(5,10),str=math.random(1,2),def=2,level=1,status='fine'}
+orcStats['totalHP'] = orcStats['hp']
+orcAngle = 0
+charStats = {vitality='alive',hp=math.random(5,10),str=math.random(1,2),def=1,level=1,status='fine'}
+charStats['totalHP'] = charStats['hp']
+charAngle = 0
+
+swordStats = {tohit=80, dmg=2}
+arrowStats = {tohit=70, dmg=1}
+
+downStairsLocationX = math.random(2,screenWidth-1)
+downStairsLocationY = math.random(4,screenHeight-1)
 
 map[downStairsLocationY][downStairsLocationX] = 24
 
@@ -93,23 +103,8 @@ function draw()
 	-- draw UI text
 	love.graphics.setColor( 255, 255, 255 )
 	love.graphics.draw("Turns: " .. turn, 5, 32)
-	love.graphics.draw("P: " .. math.ceil(charX/48) .. "," .. math.ceil(charY/48) .. " / S: "..downStairsLocationX..","..downStairsLocationY.." "..map[math.ceil(charY/48)][math.ceil(charX/48)], 5, 50)
+	love.graphics.draw("Orc HP: "..orcStats['hp'].."/"..orcStats['totalHP'], 5, 50)
 	love.graphics.draw("Elapsed: "..elapsed, 5, 70)
-	
-	love.graphics.draws( sprites, charX, charY, charSpriteX, charSpriteY, gridSize, gridSize)
-	love.graphics.draws( sprites, orcX, orcY, 480, 384, gridSize, gridSize)
-	
-	if optionsOpen == true then
-		love.graphics.setColor( 255, 255, 255 )
-		love.graphics.rectangle( 1, ((width/2)-((width/2)/2)), ((height/2)-((height/2)/2)), (width/2), (height/2) )
-		love.graphics.setColor( 0, 0, 0 )
-		love.graphics.rectangle( 0, ((width/2)-((width/2)/2))+1, ((height/2)-((height/2)/2))+1, (width/2)-2, (height/2)-2 )
-		love.graphics.setColor( 255, 255, 255 )
-		love.graphics.setFont(headerFont)
-		love.graphics.draw("Options", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+48)
-		love.graphics.setFont(font)
-		love.graphics.draw("Volume: " .. (volume*100) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
-	end
 	
 	if arrowIsUp == true then
 		if arrowFiredFrom == "up" then
@@ -126,8 +121,23 @@ function draw()
 		end
 	end
 	
+	love.graphics.draws( sprites, charX, charY, charSpriteX, charSpriteY, gridSize, gridSize,charAngle)
+	love.graphics.draws( sprites, orcX, orcY, 480, 384, gridSize, gridSize,orcAngle)
+	
+	if optionsOpen == true then
+		love.graphics.setColor( 255, 255, 255 )
+		love.graphics.rectangle( 1, ((width/2)-((width/2)/2)), ((height/2)-((height/2)/2)), (width/2), (height/2) )
+		love.graphics.setColor( 0, 0, 0 )
+		love.graphics.rectangle( 0, ((width/2)-((width/2)/2))+1, ((height/2)-((height/2)/2))+1, (width/2)-2, (height/2)-2 )
+		love.graphics.setColor( 255, 255, 255 )
+		love.graphics.setFont(headerFont)
+		love.graphics.draw("Options", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+48)
+		love.graphics.setFont(font)
+		love.graphics.draw("Volume: " .. (volume*100) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
+	end
+	
 	if orcIsHit == true then
-		love.graphics.draws(objects, orcX, orcY, 192,240,gridSize,gridSize)
+		--love.graphics.draws(objects, orcX, orcY, 192,240,gridSize,gridSize)
 	end
 	
 	if loadingFloorDownWipe == true then
@@ -146,10 +156,16 @@ end
 
 function update(dt)
 	elapsed = math.floor(love.timer.getTime( ))
+	
+	if orcStats['hp'] == 0 then
+		if orcAngle > -90 then
+			orcAngle = orcAngle-10
+		end
+	end
 
 	if arrowIsUp == true then
 		if arrowFiredFrom == "up" then
-			arrowY = arrowY-(dt*400)
+			arrowY = arrowY-(dt*600)
 			if arrowY-48 <= orcY then
 				if arrowX == orcX then
 					orcHitByArrow()
@@ -157,7 +173,7 @@ function update(dt)
 			end
 		end
 		if arrowFiredFrom == "right" then
-			arrowX = arrowX+(dt*400)
+			arrowX = arrowX+(dt*600)
 			if arrowX+48 >= orcX then
 				if arrowY == orcY then
 					orcHitByArrow()
@@ -165,7 +181,7 @@ function update(dt)
 			end
 		end
 		if arrowFiredFrom == "down" then
-			arrowY = arrowY+(dt*400)
+			arrowY = arrowY+(dt*600)
 			if arrowY+48 >= orcY then
 				if arrowX == orcX then
 					orcHitByArrow()
@@ -173,7 +189,7 @@ function update(dt)
 			end
 		end
 		if arrowFiredFrom == "left" then
-			arrowX = arrowX-(dt*400)
+			arrowX = arrowX-(dt*600)
 			if arrowX-48 <= orcX then
 				if arrowY == orcY then
 					orcHitByArrow()
@@ -280,6 +296,11 @@ function positionBaddie()
 	end
 end
 
+function damageBaddie(damage)
+	damageTaken = damage+charStats['str']
+	orcStats['hp'] = orcStats['hp']-damageTaken
+end
+
 function positionCharacter()
 	charSpriteX = 0
 	charSpriteY = gridSize*29
@@ -320,8 +341,11 @@ end
 
 function charAttack()
 	love.audio.play(charSwordSound)
-	orcIsHit = true
-	turn = turn+1;
+	if math.random(0,100) <= swordStats['tohit'] then
+		orcIsHit = true
+		damageBaddie(swordStats['dmg']*(charStats['str']/2))
+	end
+	turn = turn+1
 end
 
 function charShoot()
@@ -330,13 +354,16 @@ function charShoot()
 	arrowFiredFrom = charIsFacing
 	arrowIsUp = true
 	love.audio.play(charShootSound)
-	turn = turn+1;
+	turn = turn+1
 end
 
 function orcHitByArrow()
 	orcIsHit = true
 	arrowIsUp = false
-	love.audio.play(weaponHitSound)
+	if math.random(0,100) <= arrowStats['tohit'] then
+		damageBaddie(arrowStats['dmg'])
+		love.audio.play(weaponHitSound)
+	end
 end
 
 function moveCharacter(direction)
