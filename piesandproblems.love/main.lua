@@ -22,7 +22,7 @@ map = {
 	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
 	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
 	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,25,190,190,190,190,190,190,190,190,190,190,3},
+	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
 	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
 	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
 	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
@@ -34,6 +34,11 @@ map = {
 	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
 	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
 }
+
+downStairsLocationX = math.random(2,20)
+downStairsLocationY = math.random(1,15)
+
+map[downStairsLocationY][downStairsLocationX] = 24
 
 turn = 0
 currentFloor = 0
@@ -47,6 +52,10 @@ topMenuHeight = gridSize*2
 elapsed = 0
 lastkey = 0
 animationsRun = 0
+loadingFloorDownWipe = false
+
+loadingFloorDownWipeAnimationH = 0
+loadingFloorDownWipeAnimationW = 0
 
 optionsOpen = false
 orcIsHit = false
@@ -84,8 +93,8 @@ function draw()
 	-- draw UI text
 	love.graphics.setColor( 255, 255, 255 )
 	love.graphics.draw("Turns: " .. turn, 5, 32)
-	love.graphics.draw("X: " .. charX .. " Y:" .. charY, 5, 50)
-	love.graphics.draw("Arrow: "..arrowX..','..arrowY, 5, 70)
+	love.graphics.draw("P: " .. math.ceil(charX/48) .. "," .. math.ceil(charY/48) .. " / S: "..downStairsLocationX..","..downStairsLocationY.." "..map[math.ceil(charY/48)][math.ceil(charX/48)], 5, 50)
+	love.graphics.draw("Elapsed: "..elapsed, 5, 70)
 	
 	love.graphics.draws( sprites, charX, charY, charSpriteX, charSpriteY, gridSize, gridSize)
 	love.graphics.draws( sprites, orcX, orcY, 480, 384, gridSize, gridSize)
@@ -120,11 +129,23 @@ function draw()
 	if orcIsHit == true then
 		love.graphics.draws(objects, orcX, orcY, 192,240,gridSize,gridSize)
 	end
+	
+	if loadingFloorDownWipe == true then
+		love.graphics.setColor(0,0,0)
+		love.graphics.rectangle(0,0,0,width,loadingFloorDownWipeAnimationH)
+		if loadingFloorDownWipeAnimationH >= height then
+			love.graphics.setColor( 255, 255, 255 )
+			love.graphics.setFont(headerFont)
+			love.graphics.draw("Floor 1",width/2,height/2)
+			love.graphics.setFont(font)
+			love.graphics.draw('"doomhaven"',width/2,(height/2)+48)
+		end
+	end
 
 end
 
 function update(dt)
-	elapsed = elapsed+dt
+	elapsed = math.floor(love.timer.getTime( ))
 
 	if arrowIsUp == true then
 		if arrowFiredFrom == "up" then
@@ -140,20 +161,29 @@ function update(dt)
 			arrowX = arrowX-(dt*500)
 		end
 	end
+	
+	if loadingFloorDownWipe == true then
+		if loadingFloorDownWipeAnimationH >= height then
+			
+		else
+			loadingFloorDownWipeAnimationH = loadingFloorDownWipeAnimationH+2
+		end
+	end
+
 end
 
 function keypressed(key)
 	if key == love.key_right then 
-		moveRight()
+		moveCharacter("right")
 	end
 	if key == love.key_left then 
-		moveLeft()
+		moveCharacter("left")
 	end
 	if key == love.key_up then 
-		moveUp()
+		moveCharacter("up")
 	end
 	if key == love.key_down then 
-		moveDown()
+		moveCharacter("down")
 	end
 	if key == love.key_space then 
 		charShoot()
@@ -282,72 +312,83 @@ function charShoot()
 	turn = turn+1;
 end
 
-function moveLeft()
-	charSpriteX = 96
-	if (charX-gridSize) >= (gridSize) then
-		if charX-gridSize == orcX then
-			if charY == orcY then
-				charAttack()
+function moveCharacter(direction)
+	if direction == "left" then
+		charSpriteX = 96
+		if (charX-gridSize) >= (gridSize) then
+			if charX-gridSize == orcX then
+				if charY == orcY then
+					charAttack()
+				else
+					charX = charX-gridSize
+				end
 			else
 				charX = charX-gridSize
 			end
-		else
-			charX = charX-gridSize
 		end
+		charIsFacing = "left"
+		turn = turn+1;
 	end
-	charIsFacing = "left"
-	turn = turn+1;
-end
 
-function moveRight()
-	charSpriteX = 0
-	if (charX+gridSize) <= (width)-gridSize then
-		if charX+gridSize == orcX then
-			if charY == orcY then
-				charAttack()
+	if direction == "right" then
+		charSpriteX = 0
+		if (charX+gridSize) <= (width)-gridSize then
+			if charX+gridSize == orcX then
+				if charY == orcY then
+					charAttack()
+				else
+					charX = charX+gridSize
+				end
 			else
 				charX = charX+gridSize
 			end
-		else
-			charX = charX+gridSize
 		end
+		charIsFacing = "right"
+		turn = turn+1;
 	end
-	charIsFacing = "right"
-	turn = turn+1;
-end
 
-function moveUp()
-	charSpriteX = 144
-	if (charY-gridSize) > (gridSize*2)+(gridSize/2) then
-		if charY-gridSize == orcY then
-			if charX == orcX then
-				charAttack()
+	if direction == "up" then
+		charSpriteX = 144
+		if (charY-gridSize) > (gridSize*2)+(gridSize/2) then
+			if charY-gridSize == orcY then
+				if charX == orcX then
+					charAttack()
+				else
+					charY = charY-gridSize
+				end
 			else
 				charY = charY-gridSize
 			end
-		else
-			charY = charY-gridSize
 		end
+		charIsFacing = "up"
+		turn = turn+1;
 	end
-	charIsFacing = "up"
-	turn = turn+1;
-end
 
-function moveDown()
-	charSpriteX = 48
-	if (charY+gridSize) < (height-gridSize) then
-		if charY+gridSize == orcY then
-			if charX == orcX then
-				charAttack()
+	if direction == "down" then
+		charSpriteX = 48
+		if (charY+gridSize) < (height-gridSize) then
+			if charY+gridSize == orcY then
+				if charX == orcX then
+					charAttack()
+				else
+					charY = charY+gridSize
+				end
 			else
 				charY = charY+gridSize
 			end
-		else
-			charY = charY+gridSize
 		end
+		charIsFacing = "down"
+		turn = turn+1;
 	end
-	charIsFacing = "down"
-	turn = turn+1;
+	
+	if map[math.ceil(charY/48)][math.ceil(charX/48)] == 24 then
+		loadFloor(currentFloor-1)
+	end
+	
+end
+
+function loadFloor(floor)
+	loadingFloorDownWipe = true
 end
 
 function showOptions()
