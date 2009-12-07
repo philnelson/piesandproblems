@@ -76,7 +76,7 @@ function load()
 	environment = love.graphics.newImage( 'lofi_environment_a_48.png' )
 	objects = love.graphics.newImage( 'lofi_obj_a_48.png' )
 
-	love.audio.play( overWorldTheme, 0 )
+--	love.audio.play( overWorldTheme, 0 )
 end
 
 function draw()
@@ -149,17 +149,38 @@ function update(dt)
 
 	if arrowIsUp == true then
 		if arrowFiredFrom == "up" then
-			arrowY = arrowY-(dt*500)
+			arrowY = arrowY-(dt*400)
+			if arrowY-48 <= orcY then
+				if arrowX == orcX then
+					orcHitByArrow()
+				end
+			end
 		end
 		if arrowFiredFrom == "right" then
-			arrowX = arrowX+(dt*500)
+			arrowX = arrowX+(dt*400)
+			if arrowX+48 >= orcX then
+				if arrowY == orcY then
+					orcHitByArrow()
+				end
+			end
 		end
 		if arrowFiredFrom == "down" then
-			arrowY = arrowY+(dt*500)
+			arrowY = arrowY+(dt*400)
+			if arrowY+48 >= orcY then
+				if arrowX == orcX then
+					orcHitByArrow()
+				end
+			end
 		end
 		if arrowFiredFrom == "left" then
-			arrowX = arrowX-(dt*500)
+			arrowX = arrowX-(dt*400)
+			if arrowX-48 <= orcX then
+				if arrowY == orcY then
+					orcHitByArrow()
+				end
+			end
 		end
+		
 	end
 	
 	if loadingFloorDownWipe == true then
@@ -310,6 +331,12 @@ function charShoot()
 	arrowIsUp = true
 	love.audio.play(charShootSound)
 	turn = turn+1;
+end
+
+function orcHitByArrow()
+	orcIsHit = true
+	arrowIsUp = false
+	love.audio.play(weaponHitSound)
 end
 
 function moveCharacter(direction)
