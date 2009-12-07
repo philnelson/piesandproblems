@@ -35,15 +35,14 @@ map = {
 	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
 }
 
+player = {x=0,y=0,spriteX=0,spriteY=(gridSize*29),vitality='alive',hp=0,str=0,def=1,level=1,status=0,facing='right',angle=0}
+
 orcStats = {vitality='alive',hp=math.random(5,10),str=math.random(1,2),def=2,level=1,status='fine'}
 orcStats['totalHP'] = orcStats['hp']
 orcAngle = 0
-charStats = {vitality='alive',hp=math.random(5,10),str=math.random(1,2),def=1,level=1,status='fine'}
-charStats['totalHP'] = charStats['hp']
-charAngle = 0
 
 swordStats = {tohit=80, dmg=2}
-arrowStats = {tohit=70, dmg=1}
+arrowStats = {tohit=70, dmg=1,isOut=false,isUp=false}
 
 downStairsLocationX = math.random(2,screenWidth-1)
 downStairsLocationY = math.random(4,screenHeight-1)
@@ -69,12 +68,13 @@ loadingFloorDownWipeAnimationW = 0
 
 optionsOpen = false
 orcIsHit = false
+attackMissed = false
 
 function load()
-	positionCharacter()
+	initPlayer()
 	positionBaddie()
 	
-	arrowIsUp = false
+	arrowStats['isUp'] = false
 
 	loadSounds()
 
@@ -106,7 +106,7 @@ function draw()
 	love.graphics.draw("Orc HP: "..orcStats['hp'].."/"..orcStats['totalHP'], 5, 50)
 	love.graphics.draw("Elapsed: "..elapsed, 5, 70)
 	
-	if arrowIsUp == true then
+	if arrowStats['isOut'] == true then
 		if arrowFiredFrom == "up" then
 			love.graphics.draws(objects, arrowX,arrowY-40,480, 240,gridSize,gridSize)
 		end
@@ -121,7 +121,7 @@ function draw()
 		end
 	end
 	
-	love.graphics.draws( sprites, charX, charY, charSpriteX, charSpriteY, gridSize, gridSize,charAngle)
+	love.graphics.draws( sprites, player['x'], player['y'], player['spriteX'], player['spriteY'], gridSize, gridSize,player['angle'])
 	love.graphics.draws( sprites, orcX, orcY, 480, 384, gridSize, gridSize,orcAngle)
 	
 	if optionsOpen == true then
@@ -138,6 +138,17 @@ function draw()
 	
 	if orcIsHit == true then
 		--love.graphics.draws(objects, orcX, orcY, 192,240,gridSize,gridSize)
+	end
+	
+	if attackMissed == true then
+		if elapsed < attackMissedTime+2 then
+			love.graphics.setColor( 0, 0, 0 )
+			love.graphics.draw('miss',player['x']+3, player['y']+3)
+			love.graphics.setColor( 255, 255, 255 )
+			love.graphics.draw('miss',player['x'], player['y'])
+		else
+			attackMissed = false
+		end
 	end
 	
 	if loadingFloorDownWipe == true then
@@ -163,7 +174,7 @@ function update(dt)
 		end
 	end
 
-	if arrowIsUp == true then
+	if arrowStats['isUp'] == true then
 		if arrowFiredFrom == "up" then
 			arrowY = arrowY-(dt*600)
 			if arrowY-48 <= orcY then
@@ -178,6 +189,9 @@ function update(dt)
 				if arrowY == orcY then
 					orcHitByArrow()
 				end
+			end
+			if arrowX+108 >= width then
+				arrowStats['isUp'] = false
 			end
 		end
 		if arrowFiredFrom == "down" then
@@ -297,45 +311,47 @@ function positionBaddie()
 end
 
 function damageBaddie(damage)
-	damageTaken = damage+charStats['str']
+	damageTaken = damage+player['str']
 	orcStats['hp'] = orcStats['hp']-damageTaken
 end
 
-function positionCharacter()
-	charSpriteX = 0
-	charSpriteY = gridSize*29
-
+function initPlayer()
+	player['spriteX'] = 0
+	player['spriteY'] = gridSize*29
+	
+	player['hp'] = math.random(5,10)
+	player['totalHP'] = player['hp']
+	player['str'] = math.random(1,2)
+	player['def'] = math.random(1,2)
+	
 	-- Position character
-
-	charX = 0
-	charY = 0
 
 	goodX = false
 	goodY = false
 
 	while goodX == false do
-		charX = (gridSize * math.random(1,screenWidth))+24
-		if charX > gridSize*2-(gridSize/2) then
-			if charX < (screenWidth*gridSize)-(gridSize/2) then
+		player['x'] = (gridSize * math.random(1,screenWidth))+24
+		if player['x'] > gridSize*2-(gridSize/2) then
+			if player['x'] < (screenWidth*gridSize)-(gridSize/2) then
 				goodX = true
 			end
 		end
 	end
 
 	while goodY == false do
-		charY = (gridSize * math.random(1,screenHeight))+24
-		if charY > topMenuHeight+gridSize*2-(gridSize/2) then
-			if charY < (screenHeight*gridSize)-(gridSize/2) then
+		player['y'] = (gridSize * math.random(1,screenHeight))+24
+		if player['y'] > topMenuHeight+gridSize*2-(gridSize/2) then
+			if player['y'] < (screenHeight*gridSize)-(gridSize/2) then
 				goodY = true
 			end
 		end
 	end
 	
-	arrowX = charX
-	arrowY = charY
+	arrowX = player['x']
+	arrowY = player['y']
 
-	charIsFacing = "right"
-	arrowFiredFrom = charIsFacing
+	player['facing'] = "right"
+	arrowFiredFrom = player['facing']
 	
 end
 
@@ -343,23 +359,29 @@ function charAttack()
 	love.audio.play(charSwordSound)
 	if math.random(0,100) <= swordStats['tohit'] then
 		orcIsHit = true
-		damageBaddie(swordStats['dmg']*(charStats['str']/2))
+		damageBaddie(swordStats['dmg']*(player['str']/2))
+	else
+		attackMissedTime = elapsed
+		attackMissed = true
 	end
 	turn = turn+1
 end
 
 function charShoot()
-	arrowX = charX;
-	arrowY = charY;
-	arrowFiredFrom = charIsFacing
-	arrowIsUp = true
-	love.audio.play(charShootSound)
-	turn = turn+1
+	if arrowStats['isOut'] == false then
+		arrowX = player['x'];
+		arrowY = player['y'];
+		arrowFiredFrom = player['facing']
+		arrowStats['isUp'] = true
+		love.audio.play(charShootSound)
+		turn = turn+1
+		arrowStats['isOut'] = true
+	end
 end
 
 function orcHitByArrow()
 	orcIsHit = true
-	arrowIsUp = false
+	arrowStats['isUp'] = false
 	if math.random(0,100) <= arrowStats['tohit'] then
 		damageBaddie(arrowStats['dmg'])
 		love.audio.play(weaponHitSound)
@@ -368,75 +390,83 @@ end
 
 function moveCharacter(direction)
 	if direction == "left" then
-		charSpriteX = 96
-		if (charX-gridSize) >= (gridSize) then
-			if charX-gridSize == orcX then
-				if charY == orcY then
+		player['spriteX'] = 96
+		if (player['x']-gridSize) >= (gridSize) then
+			if player['x']-gridSize == orcX then
+				if player['y'] == orcY then
 					charAttack()
 				else
-					charX = charX-gridSize
+					player['x'] = player['x']-gridSize
 				end
 			else
-				charX = charX-gridSize
+				player['x'] = player['x']-gridSize
 			end
 		end
-		charIsFacing = "left"
+		player['facing'] = "left"
 		turn = turn+1;
 	end
 
 	if direction == "right" then
-		charSpriteX = 0
-		if (charX+gridSize) <= (width)-gridSize then
-			if charX+gridSize == orcX then
-				if charY == orcY then
+		player['spriteX'] = 0
+		if (player['x']+gridSize) <= (width)-gridSize then
+			if player['x']+gridSize == orcX then
+				if player['y'] == orcY then
 					charAttack()
 				else
-					charX = charX+gridSize
+					player['x'] = player['x']+gridSize
 				end
 			else
-				charX = charX+gridSize
+				player['x'] = player['x']+gridSize
 			end
 		end
-		charIsFacing = "right"
+		player['facing'] = "right"
 		turn = turn+1;
 	end
 
 	if direction == "up" then
-		charSpriteX = 144
-		if (charY-gridSize) > (gridSize*2)+(gridSize/2) then
-			if charY-gridSize == orcY then
-				if charX == orcX then
+		player['spriteX'] = 144
+		if (player['y']-gridSize) > (gridSize*2)+(gridSize/2) then
+			if player['y']-gridSize == orcY then
+				if player['x'] == orcX then
 					charAttack()
 				else
-					charY = charY-gridSize
+					player['y'] = player['y']-gridSize
 				end
 			else
-				charY = charY-gridSize
+				player['y'] = player['y']-gridSize
 			end
 		end
-		charIsFacing = "up"
+		player['facing'] = "up"
 		turn = turn+1;
 	end
 
 	if direction == "down" then
-		charSpriteX = 48
-		if (charY+gridSize) < (height-gridSize) then
-			if charY+gridSize == orcY then
-				if charX == orcX then
+		player['spriteX'] = 48
+		if (player['y']+gridSize) < (height-gridSize) then
+			if player['y']+gridSize == orcY then
+				if player['x'] == orcX then
 					charAttack()
 				else
-					charY = charY+gridSize
+					player['y'] = player['y']+gridSize
 				end
 			else
-				charY = charY+gridSize
+				player['y'] = player['y']+gridSize
 			end
 		end
-		charIsFacing = "down"
+		player['facing'] = "down"
 		turn = turn+1;
 	end
 	
-	if map[math.ceil(charY/48)][math.ceil(charX/48)] == 24 then
+	if map[math.ceil(player['y']/48)][math.ceil(player['x']/48)] == 24 then
 		loadFloor(currentFloor-1)
+	end
+	
+	if arrowStats['isOut'] == true then
+		if arrowX == player['x'] then
+			if arrowY == player['y'] then
+				arrowStats['isOut'] = false
+			end
+		end
 	end
 	
 end
