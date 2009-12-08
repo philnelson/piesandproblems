@@ -35,14 +35,9 @@ map = {
 	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
 }
 
-player = {x=0,y=0,spriteX=0,spriteY=(gridSize*29),vitality='alive',hp=0,str=0,def=1,level=1,status=0,facing='right',angle=0}
-
-orcStats = {vitality='alive',hp=math.random(5,10),str=math.random(1,2),def=2,level=1,status='fine'}
-orcStats['totalHP'] = orcStats['hp']
-orcAngle = 0
-
-swordStats = {tohit=80, dmg=2}
-arrowStats = {tohit=70, dmg=1,isOut=false,isUp=false}
+player = {x=0,y=0,spriteX=0,spriteY=(gridSize*29),vitality='alive',hp=0,str=0,def=1,level=1,status=0,facing='right',angle=0,arrowHave=2}
+baddies = {}
+arrows = {}
 
 downStairsLocationX = math.random(2,screenWidth-1)
 downStairsLocationY = math.random(4,screenHeight-1)
@@ -67,14 +62,51 @@ loadingFloorDownWipeAnimationH = 0
 loadingFloorDownWipeAnimationW = 0
 
 optionsOpen = false
-orcIsHit = false
-attackMissed = false
+
+function spawnBaddie(type)
+	i = #baddies+1
+	if type == 'orc' then
+		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=math.random(5,10),str=math.random(1,2),def=math.random(2,4),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1}
+		
+		baddies[i]['totalHP'] = baddies[i]['hp']
+	end
+	
+	goodX = false
+	goodY = false
+	thisX = 0
+	thisY = 0
+
+	while goodX == false do
+		thisX = (gridSize * math.random(1,screenWidth))+((baddies[i]['sizeW']*gridSize)/2)
+		if thisX > gridSize*2-(gridSize/2) then
+			if thisX < (screenWidth*gridSize)-((baddies[i]['sizeW']*gridSize)/2) then
+				if thisX ~= player['x'] then
+					goodX = true
+				end
+			end
+		end
+	end
+
+	while goodY == false do
+		thisY = (gridSize * math.random(1,screenHeight))+24
+		if thisY > topMenuHeight+gridSize*2-((baddies[i]['sizeH']*gridSize)/2) then
+			if thisY < (screenHeight*gridSize)-((baddies[i]['sizeH']*gridSize)/2) then
+				if thisY ~= player['y'] then
+					goodY = true
+				end
+			end
+		end
+	end
+	
+	baddies[i]['x'] = thisX
+	baddies[i]['y'] = thisY
+	
+end
 
 function load()
 	initPlayer()
-	positionBaddie()
 	
-	arrowStats['isUp'] = false
+	spawnBaddie('orc')
 
 	loadSounds()
 
@@ -85,6 +117,8 @@ function load()
 	sprites = love.graphics.newImage( 'lofi_char_a_48.png' )
 	environment = love.graphics.newImage( 'lofi_environment_a_48.png' )
 	objects = love.graphics.newImage( 'lofi_obj_a_48.png' )
+	portraits = love.graphics.newImage( 'lofi_portrait_a_48.png' )
+	interface = love.graphics.newImage( 'lofi_interface_a_48.png' )
 
 --	love.audio.play( overWorldTheme, 0 )
 end
@@ -92,37 +126,40 @@ end
 function draw()
 	generateRoom(currentFloor)
 	
-	love.graphics.setColor( 255, 255, 0 )
-	for y=0, screenHeight do
-		for x=0, screenWidth do                                                         
-			--love.graphics.line( x*gridSize, 0, x*gridSize, (screenHeight)*gridSize )
-		end
-	--	love.graphics.line( 0, y*gridSize, (screenWidth)*gridSize, y*gridSize )
-	end
-	
 	-- draw UI text
 	love.graphics.setColor( 255, 255, 255 )
 	love.graphics.draw("Turns: " .. turn, 5, 32)
-	love.graphics.draw("Orc HP: "..orcStats['hp'].."/"..orcStats['totalHP'], 5, 50)
+	love.graphics.draw("HP "..baddies[1]['hp'].."/"..baddies[1]['totalHP'],5,52)
 	love.graphics.draw("Elapsed: "..elapsed, 5, 70)
 	
-	if arrowStats['isOut'] == true then
-		if arrowFiredFrom == "up" then
-			love.graphics.draws(objects, arrowX,arrowY-40,480, 240,gridSize,gridSize)
-		end
-		if arrowFiredFrom == "right" then
-			love.graphics.draws(objects, arrowX+40,arrowY,575, 240,gridSize,gridSize)
-		end
-		if arrowFiredFrom == "down" then
-			love.graphics.draws(objects, arrowX,arrowY+40,288, 240,gridSize,gridSize)
-		end
-		if arrowFiredFrom == "left" then
-			love.graphics.draws(objects, arrowX-40,arrowY,385, 240,gridSize,gridSize)
+	love.graphics.draw("HP: "..player['hp'].."/"..player['totalHP'],600,32)
+	love.graphics.draw("Arrow Have: "..player['arrowHave'],600,52)
+	
+	for i=1, #arrows do
+		if arrows[i]['isOut'] == true then
+			if arrows[i]['firedFrom'] == "up" then
+				love.graphics.draws(objects, arrows[i]['x'],arrows[i]['y']-40,480, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "right" then
+				love.graphics.draws(objects, arrows[i]['x']+40,arrows[i]['y'],575, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "down" then
+				love.graphics.draws(objects, arrows[i]['x'],arrows[i]['y']+40,288, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "left" then
+				love.graphics.draws(objects, arrows[i]['x']-40,arrows[i]['y'],385, 240,gridSize,gridSize)
+			end
 		end
 	end
 	
 	love.graphics.draws( sprites, player['x'], player['y'], player['spriteX'], player['spriteY'], gridSize, gridSize,player['angle'])
-	love.graphics.draws( sprites, orcX, orcY, 480, 384, gridSize, gridSize,orcAngle)
+	
+	for i=1,#baddies do
+		if #baddies > 0 then
+			love.graphics.draws( sprites, baddies[i]['x'], baddies[i]['y'], baddies[i]['spriteX'], baddies[i]['spriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'])
+		end
+	end
+	
 	
 	if optionsOpen == true then
 		love.graphics.setColor( 255, 255, 255 )
@@ -134,21 +171,6 @@ function draw()
 		love.graphics.draw("Options", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+48)
 		love.graphics.setFont(font)
 		love.graphics.draw("Volume: " .. (volume*100) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
-	end
-	
-	if orcIsHit == true then
-		--love.graphics.draws(objects, orcX, orcY, 192,240,gridSize,gridSize)
-	end
-	
-	if attackMissed == true then
-		if elapsed < attackMissedTime+2 then
-			love.graphics.setColor( 0, 0, 0 )
-			love.graphics.draw('miss',player['x']+3, player['y']+3)
-			love.graphics.setColor( 255, 255, 255 )
-			love.graphics.draw('miss',player['x'], player['y'])
-		else
-			attackMissed = false
-		end
 	end
 	
 	if loadingFloorDownWipe == true then
@@ -168,56 +190,28 @@ end
 function update(dt)
 	elapsed = math.floor(love.timer.getTime( ))
 	
-	if orcStats['hp'] == 0 then
-		if orcAngle > -90 then
-			orcAngle = orcAngle-10
-		end
-	end
-
-	if arrowStats['isUp'] == true then
-		if arrowFiredFrom == "up" then
-			arrowY = arrowY-(dt*600)
-			if arrowY-48 <= orcY then
-				if arrowX == orcX then
-					orcHitByArrow()
-				end
-			end
-		end
-		if arrowFiredFrom == "right" then
-			arrowX = arrowX+(dt*600)
-			if arrowX+48 >= orcX then
-				if arrowY == orcY then
-					orcHitByArrow()
-				end
-			end
-			if arrowX+108 >= width then
-				arrowStats['isUp'] = false
-			end
-		end
-		if arrowFiredFrom == "down" then
-			arrowY = arrowY+(dt*600)
-			if arrowY+48 >= orcY then
-				if arrowX == orcX then
-					orcHitByArrow()
-				end
-			end
-		end
-		if arrowFiredFrom == "left" then
-			arrowX = arrowX-(dt*600)
-			if arrowX-48 <= orcX then
-				if arrowY == orcY then
-					orcHitByArrow()
-				end
-			end
-		end
-		
-	end
-	
 	if loadingFloorDownWipe == true then
 		if loadingFloorDownWipeAnimationH >= height then
 			
 		else
 			loadingFloorDownWipeAnimationH = loadingFloorDownWipeAnimationH+2
+		end
+	end
+	
+	for i=1,#arrows do
+		if arrows[i]['isLive'] == true then
+			if arrows[i]['firedFrom'] == 'up' then
+				arrows[i]['y'] = arrows[i]['y']-(dt*600)
+			end
+			if arrows[i]['firedFrom'] == 'right' then
+				arrows[i]['x'] = arrows[i]['x']+(dt*600)
+			end
+			if arrows[i]['firedFrom'] == 'down' then
+				arrows[i]['y'] = arrows[i]['y']+(dt*600)
+			end
+			if arrows[i]['firedFrom'] == 'left' then
+				arrows[i]['x'] = arrows[i]['x']-(dt*600)
+			end
 		end
 	end
 
@@ -278,41 +272,20 @@ end
 function loadSounds()
 	overWorldTheme = love.audio.newSound('Mr Fluff.ogg')
 
-	charSwordSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/attack03.wav')
-	charShootSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/rocket01.wav')
+	playerSwordSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/attack03.wav')
+	playerShootSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/rocket01.wav')
 
 	weaponHitSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact01.wav')
 	weaponHitSound2 = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact02.wav')
+	arrowMissSound = love.audio.newSound('shaktool_yowzer_thud_2.wav')
 
 	uiOpenSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/open01.wav')
+	
+	mysteriousItem = love.audio.newSound('MysteriousItem1.wav')
 end
 
-function positionBaddie()
-	goodX = false
-	goodY = false
-
-	while goodX == false do
-		orcX = (gridSize * math.random(1,screenWidth))+24
-		if orcX > gridSize*2-(gridSize/2) then
-			if orcX < (screenWidth*gridSize)-(gridSize/2) then
-				goodX = true
-			end
-		end
-	end
-
-	while goodY == false do
-		orcY = (gridSize * math.random(1,screenHeight))+24
-		if orcY > topMenuHeight+gridSize*2-(gridSize/2) then
-			if orcY < (screenHeight*gridSize)-(gridSize/2) then
-				goodY = true
-			end
-		end
-	end
-end
-
-function damageBaddie(damage)
+function damageBaddie(damage,baddie)
 	damageTaken = damage+player['str']
-	orcStats['hp'] = orcStats['hp']-damageTaken
 end
 
 function initPlayer()
@@ -346,46 +319,33 @@ function initPlayer()
 			end
 		end
 	end
-	
-	arrowX = player['x']
-	arrowY = player['y']
 
 	player['facing'] = "right"
-	arrowFiredFrom = player['facing']
+	
+	player['arrowHave'] = math.random(1,5)
 	
 end
 
 function charAttack()
-	love.audio.play(charSwordSound)
+	love.audio.play(playerSwordSound)
 	if math.random(0,100) <= swordStats['tohit'] then
-		orcIsHit = true
 		damageBaddie(swordStats['dmg']*(player['str']/2))
-	else
-		attackMissedTime = elapsed
-		attackMissed = true
 	end
 	turn = turn+1
 end
 
 function charShoot()
-	if arrowStats['isOut'] == false then
-		arrowX = player['x'];
-		arrowY = player['y'];
-		arrowFiredFrom = player['facing']
-		arrowStats['isUp'] = true
-		love.audio.play(charShootSound)
+	if player['arrowHave'] ~= 0 then
+		spawnArrow()
+		player['arrowHave'] = player['arrowHave']-1
 		turn = turn+1
-		arrowStats['isOut'] = true
 	end
 end
 
-function orcHitByArrow()
-	orcIsHit = true
-	arrowStats['isUp'] = false
-	if math.random(0,100) <= arrowStats['tohit'] then
-		damageBaddie(arrowStats['dmg'])
-		love.audio.play(weaponHitSound)
-	end
+function spawnArrow()
+	i = #arrows+1
+	arrows[i] = {x=player['x'],y=player['y'],isOut=true,isLive=true,firedFrom=player['facing']}
+	love.audio.play(playerShootSound)
 end
 
 function moveCharacter(direction)
@@ -460,15 +420,6 @@ function moveCharacter(direction)
 	if map[math.ceil(player['y']/48)][math.ceil(player['x']/48)] == 24 then
 		loadFloor(currentFloor-1)
 	end
-	
-	if arrowStats['isOut'] == true then
-		if arrowX == player['x'] then
-			if arrowY == player['y'] then
-				arrowStats['isOut'] = false
-			end
-		end
-	end
-	
 end
 
 function loadFloor(floor)
