@@ -15,6 +15,10 @@ love.audio.setMode( love.audio_quality_low, 1, 8 )
 love.graphics.setLineStyle( love.line_rough )
 love.graphics.setLineWidth( 4 )
 
+levels = {}
+levels[1] = {name="Kiss The Sky"}
+
+
 -- First two rows are covered by the display
 map = {
 	{190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190},
@@ -42,6 +46,7 @@ arrows = {}
 downStairsLocationX = math.random(2,screenWidth-1)
 downStairsLocationY = math.random(4,screenHeight-1)
 
+-- Set the sprite for the stairs
 map[downStairsLocationY][downStairsLocationX] = 24
 
 turn = 0
@@ -56,55 +61,11 @@ topMenuHeight = gridSize*2
 elapsed = 0
 lastkey = 0
 animationsRun = 0
-loadingFloorDownWipe = false
-
-loadingFloorDownWipeAnimationH = 0
-loadingFloorDownWipeAnimationW = 0
 
 optionsOpen = false
 
-function spawnBaddie(type)
-	i = #baddies+1
-	if type == 'orc' then
-		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=math.random(5,10),str=math.random(1,2),def=math.random(2,4),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1}
-		
-		baddies[i]['totalHP'] = baddies[i]['hp']
-	end
-	
-	goodX = false
-	goodY = false
-	thisX = 0
-	thisY = 0
-
-	while goodX == false do
-		thisX = (gridSize * math.random(1,screenWidth))+((baddies[i]['sizeW']*gridSize)/2)
-		if thisX > gridSize*2-(gridSize/2) then
-			if thisX < (screenWidth*gridSize)-((baddies[i]['sizeW']*gridSize)/2) then
-				if thisX ~= player['x'] then
-					goodX = true
-				end
-			end
-		end
-	end
-
-	while goodY == false do
-		thisY = (gridSize * math.random(1,screenHeight))+24
-		if thisY > topMenuHeight+gridSize*2-((baddies[i]['sizeH']*gridSize)/2) then
-			if thisY < (screenHeight*gridSize)-((baddies[i]['sizeH']*gridSize)/2) then
-				if thisY ~= player['y'] then
-					goodY = true
-				end
-			end
-		end
-	end
-	
-	baddies[i]['x'] = thisX
-	baddies[i]['y'] = thisY
-	
-end
-
 function load()
-	initPlayer()
+	spawnPlayer()
 	
 	spawnBaddie('orc')
 
@@ -120,7 +81,7 @@ function load()
 	portraits = love.graphics.newImage( 'lofi_portrait_a_48.png' )
 	interface = love.graphics.newImage( 'lofi_interface_a_48.png' )
 
---	love.audio.play( overWorldTheme, 0 )
+	--love.audio.play( overWorldTheme, 0 )
 end
 
 function draw()
@@ -128,12 +89,19 @@ function draw()
 	
 	-- draw UI text
 	love.graphics.setColor( 255, 255, 255 )
-	love.graphics.draw("Turns: " .. turn, 5, 32)
-	love.graphics.draw("HP "..baddies[1]['hp'].."/"..baddies[1]['totalHP'],5,52)
+	love.graphics.draw("Orc: "..baddies[1]['x']..", "..baddies[1]['y'], 5, 32)
+	love.graphics.draw("HP "..baddies[1]['hp'].."/"..baddies[1]['totalHP'],5,48)
 	love.graphics.draw("Elapsed: "..elapsed, 5, 70)
 	
-	love.graphics.draw("HP: "..player['hp'].."/"..player['totalHP'],600,32)
-	love.graphics.draw("Arrow Have: "..player['arrowHave'],600,52)
+	love.graphics.draw("You: "..player['x']..", "..player['y'].." = "..map[player['y']][player['x']], 600, 32)
+	love.graphics.draw("HP: "..player['hp'].."/"..player['totalHP'],600,48)
+	love.graphics.draw("Arrow Have: "..player['arrowHave'],600,70)
+	
+	for i=1,#baddies do
+		if #baddies > 0 then
+			love.graphics.draws( sprites, baddies[i]['x']*gridSize-24, baddies[i]['y']*gridSize-24, baddies[i]['spriteX'], baddies[i]['spriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'])
+		end
+	end
 	
 	for i=1, #arrows do
 		if arrows[i]['isOut'] == true then
@@ -150,17 +118,11 @@ function draw()
 				love.graphics.draws(objects, arrows[i]['x']-40,arrows[i]['y'],385, 240,gridSize,gridSize)
 			end
 		end
+		love.graphics.draw(arrows[i]['x']..", "..arrows[i]['y'],arrows[i]['x'],arrows[i]['y'])
 	end
 	
-	love.graphics.draws( sprites, player['x'], player['y'], player['spriteX'], player['spriteY'], gridSize, gridSize,player['angle'])
-	
-	for i=1,#baddies do
-		if #baddies > 0 then
-			love.graphics.draws( sprites, baddies[i]['x'], baddies[i]['y'], baddies[i]['spriteX'], baddies[i]['spriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'])
-		end
-	end
-	
-	
+	love.graphics.draws( sprites, player['x']*gridSize-24, player['y']*gridSize-24, player['spriteX'], player['spriteY'], gridSize, gridSize,player['angle'])
+
 	if optionsOpen == true then
 		love.graphics.setColor( 255, 255, 255 )
 		love.graphics.rectangle( 1, ((width/2)-((width/2)/2)), ((height/2)-((height/2)/2)), (width/2), (height/2) )
@@ -172,49 +134,62 @@ function draw()
 		love.graphics.setFont(font)
 		love.graphics.draw("Volume: " .. (volume*100) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
 	end
-	
-	if loadingFloorDownWipe == true then
-		love.graphics.setColor(0,0,0)
-		love.graphics.rectangle(0,0,0,width,loadingFloorDownWipeAnimationH)
-		if loadingFloorDownWipeAnimationH >= height then
-			love.graphics.setColor( 255, 255, 255 )
-			love.graphics.setFont(headerFont)
-			love.graphics.draw("Floor 1",width/2,height/2)
-			love.graphics.setFont(font)
-			love.graphics.draw('"doomhaven"',width/2,(height/2)+48)
-		end
-	end
 
 end
 
 function update(dt)
 	elapsed = math.floor(love.timer.getTime( ))
-	
-	if loadingFloorDownWipe == true then
-		if loadingFloorDownWipeAnimationH >= height then
-			
-		else
-			loadingFloorDownWipeAnimationH = loadingFloorDownWipeAnimationH+2
-		end
-	end
-	
+	checkArrows(dt)
+end
+
+function checkArrows(dt)
 	for i=1,#arrows do
 		if arrows[i]['isLive'] == true then
+			for j=1, #baddies do
+				if arrows[i]['x'] >= baddies[j]['x']-((baddies[j]['sizeW']*gridSize)) then
+					if arrows[i]['x'] <= baddies[j]['x']+((baddies[j]['sizeW']*gridSize)) then
+						if arrows[i]['y'] >= baddies[j]['y']-((baddies[j]['sizeH']*gridSize)) then
+							if arrows[i]['y'] <= baddies[j]['y']+((baddies[j]['sizeH']*gridSize)) then
+								baddieHitByArrow(i,j)
+							end
+						end
+					end
+				end
+			end
+		
 			if arrows[i]['firedFrom'] == 'up' then
-				arrows[i]['y'] = arrows[i]['y']-(dt*600)
+				arrows[i]['y'] = arrows[i]['y']-1
 			end
 			if arrows[i]['firedFrom'] == 'right' then
-				arrows[i]['x'] = arrows[i]['x']+(dt*600)
+				arrows[i]['x'] = arrows[i]['x']+1
 			end
 			if arrows[i]['firedFrom'] == 'down' then
-				arrows[i]['y'] = arrows[i]['y']+(dt*600)
+				arrows[i]['y'] = arrows[i]['y']+1
 			end
 			if arrows[i]['firedFrom'] == 'left' then
-				arrows[i]['x'] = arrows[i]['x']-(dt*600)
+				arrows[i]['x'] = arrows[i]['x']-1
 			end
 		end
 	end
+end
 
+function baddieHitByArrow(arrow,baddie)
+	if math.random(1,100) < 75 then
+		arrows[arrow]['isLive'] = false
+		if arrows[arrow]['firedFrom'] == 'left' then
+			arrows[arrow]['y'] = baddies[baddie]['y']
+			arrows[arrow]['x'] = arrows[arrow]['x']
+		end
+		if arrows[arrow]['firedFrom'] == 'right' then
+			arrows[arrow]['y'] = baddies[baddie]['y']
+		end
+		if arrows[arrow]['firedFrom'] == 'up' then
+			arrows[arrow]['x'] = baddies[baddie]['x']
+		end
+		if arrows[arrow]['firedFrom'] == 'down' then
+			arrows[arrow]['x'] = baddies[baddie]['x']
+		end
+	end
 end
 
 function keypressed(key)
@@ -288,42 +263,36 @@ function damageBaddie(damage,baddie)
 	damageTaken = damage+player['str']
 end
 
-function initPlayer()
-	player['spriteX'] = 0
-	player['spriteY'] = gridSize*29
-	
+function spawnPlayer()
 	player['hp'] = math.random(5,10)
 	player['totalHP'] = player['hp']
 	player['str'] = math.random(1,2)
 	player['def'] = math.random(1,2)
 	
 	-- Position character
-
-	goodX = false
-	goodY = false
-
-	while goodX == false do
-		player['x'] = (gridSize * math.random(1,screenWidth))+24
-		if player['x'] > gridSize*2-(gridSize/2) then
-			if player['x'] < (screenWidth*gridSize)-(gridSize/2) then
-				goodX = true
-			end
-		end
-	end
-
-	while goodY == false do
-		player['y'] = (gridSize * math.random(1,screenHeight))+24
-		if player['y'] > topMenuHeight+gridSize*2-(gridSize/2) then
-			if player['y'] < (screenHeight*gridSize)-(gridSize/2) then
-				goodY = true
-			end
-		end
-	end
+	player['x'] = getGoodX(1)
+	player['y'] = getGoodY(1)
 
 	player['facing'] = "right"
 	
 	player['arrowHave'] = math.random(1,5)
+end
+
+function spawnBaddie(type)
+	i = #baddies+1
+	if type == 'orc' then
+		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=math.random(5,10),str=math.random(1,2),def=math.random(2,4),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1}
+		
+		baddies[i]['totalHP'] = baddies[i]['hp']
+	end
+
+	goodPos = false
 	
+	while goodPos == false do
+		baddies[i]['x'] = getGoodX(baddies[i]['sizeW'])
+		baddies[i]['y'] = getGoodY(baddies[i]['sizeH'])
+		goodPos = checkSpaceEmpty(baddies[i]['x'],baddies[i]['y'],i)
+	end
 end
 
 function charAttack()
@@ -351,16 +320,8 @@ end
 function moveCharacter(direction)
 	if direction == "left" then
 		player['spriteX'] = 96
-		if (player['x']-gridSize) >= (gridSize) then
-			if player['x']-gridSize == orcX then
-				if player['y'] == orcY then
-					charAttack()
-				else
-					player['x'] = player['x']-gridSize
-				end
-			else
-				player['x'] = player['x']-gridSize
-			end
+		if map[player['y']][(player['x'])-1] ~= 3 then
+			player['x'] = player['x']-1 
 		end
 		player['facing'] = "left"
 		turn = turn+1;
@@ -368,16 +329,8 @@ function moveCharacter(direction)
 
 	if direction == "right" then
 		player['spriteX'] = 0
-		if (player['x']+gridSize) <= (width)-gridSize then
-			if player['x']+gridSize == orcX then
-				if player['y'] == orcY then
-					charAttack()
-				else
-					player['x'] = player['x']+gridSize
-				end
-			else
-				player['x'] = player['x']+gridSize
-			end
+		if map[player['y']][(player['x']+1)] ~= 3 then
+			player['x'] = player['x']+1 
 		end
 		player['facing'] = "right"
 		turn = turn+1;
@@ -385,16 +338,8 @@ function moveCharacter(direction)
 
 	if direction == "up" then
 		player['spriteX'] = 144
-		if (player['y']-gridSize) > (gridSize*2)+(gridSize/2) then
-			if player['y']-gridSize == orcY then
-				if player['x'] == orcX then
-					charAttack()
-				else
-					player['y'] = player['y']-gridSize
-				end
-			else
-				player['y'] = player['y']-gridSize
-			end
+		if map[(player['y']-1)][player['x']] ~= 3 then
+			player['y'] = player['y']-1 
 		end
 		player['facing'] = "up"
 		turn = turn+1;
@@ -402,28 +347,12 @@ function moveCharacter(direction)
 
 	if direction == "down" then
 		player['spriteX'] = 48
-		if (player['y']+gridSize) < (height-gridSize) then
-			if player['y']+gridSize == orcY then
-				if player['x'] == orcX then
-					charAttack()
-				else
-					player['y'] = player['y']+gridSize
-				end
-			else
-				player['y'] = player['y']+gridSize
-			end
+		if map[(player['y']+1)][player['x']] ~= 3 then
+			player['y'] = player['y']+1 
 		end
 		player['facing'] = "down"
 		turn = turn+1;
 	end
-	
-	if map[math.ceil(player['y']/48)][math.ceil(player['x']/48)] == 24 then
-		loadFloor(currentFloor-1)
-	end
-end
-
-function loadFloor(floor)
-	loadingFloorDownWipe = true
 end
 
 function showOptions()
@@ -455,5 +384,41 @@ function generateRoom(floor)
 			end
 			love.graphics.draws( environment, (x*gridSize)-24, (y*gridSize)-24, (envSpriteX*gridSize), (envSpriteY*gridSize),gridSize, gridSize )
 		end
+	end
+end
+
+function getGoodX(spriteWidth)
+	goodX = false
+	while goodX == false do
+		thisX = math.random(1,screenWidth-1)
+		goodX = true
+	end
+	return thisX
+end
+
+function getGoodY(spriteHeight)
+	goodY = false
+	while goodY == false do
+		thisY = math.random(3,screenHeight-1)
+		goodY = true
+	end
+	return thisY
+end
+
+function checkSpaceEmpty(x,y,id)
+	occupied = 0
+	for i=1, #baddies do
+		if i ~= id then
+			if baddies[i]['x'] == x then
+				if baddies[i]['y'] == y then
+					occupied = occupied+1
+				end
+			end
+		end
+	end
+	if occupied > 0 then
+		return false
+	else
+		return true
 	end
 end
