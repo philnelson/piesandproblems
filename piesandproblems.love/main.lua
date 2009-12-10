@@ -106,19 +106,19 @@ function draw()
 	for i=1, #arrows do
 		if arrows[i]['isOut'] == true then
 			if arrows[i]['firedFrom'] == "up" then
-				love.graphics.draws(objects, arrows[i]['x'],arrows[i]['y']-40,480, 240,gridSize,gridSize)
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,480, 240,gridSize,gridSize)
 			end
 			if arrows[i]['firedFrom'] == "right" then
-				love.graphics.draws(objects, arrows[i]['x']+40,arrows[i]['y'],575, 240,gridSize,gridSize)
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,575, 240,gridSize,gridSize)
 			end
 			if arrows[i]['firedFrom'] == "down" then
-				love.graphics.draws(objects, arrows[i]['x'],arrows[i]['y']+40,288, 240,gridSize,gridSize)
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,288, 240,gridSize,gridSize)
 			end
 			if arrows[i]['firedFrom'] == "left" then
-				love.graphics.draws(objects, arrows[i]['x']-40,arrows[i]['y'],385, 240,gridSize,gridSize)
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,385, 240,gridSize,gridSize)
 			end
 		end
-		love.graphics.draw(arrows[i]['x']..", "..arrows[i]['y'],arrows[i]['x'],arrows[i]['y'])
+		love.graphics.draw(arrows[i]['x']..", "..arrows[i]['y'],arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
 	end
 	
 	love.graphics.draws( sprites, player['x']*gridSize-24, player['y']*gridSize-24, player['spriteX'], player['spriteY'], gridSize, gridSize,player['angle'])
@@ -145,31 +145,44 @@ end
 function checkArrows(dt)
 	for i=1,#arrows do
 		if arrows[i]['isLive'] == true then
-			for j=1, #baddies do
-				if arrows[i]['x'] >= baddies[j]['x']-((baddies[j]['sizeW']*gridSize)) then
-					if arrows[i]['x'] <= baddies[j]['x']+((baddies[j]['sizeW']*gridSize)) then
-						if arrows[i]['y'] >= baddies[j]['y']-((baddies[j]['sizeH']*gridSize)) then
-							if arrows[i]['y'] <= baddies[j]['y']+((baddies[j]['sizeH']*gridSize)) then
-								baddieHitByArrow(i,j)
-							end
-						end
-					end
+
+		end
+		
+		if arrows[i]['isLive'] == true then
+			if arrows[i]['firedFrom'] == 'up' then
+				if map[math.ceil(arrows[i]['y'])-1][math.ceil(arrows[i]['x'])] == 3 then
+					arrows[i]['isLive'] = false
+					arrows[i]['y'] = math.ceil(arrows[i]['y'])
+				else
+					arrows[i]['y'] = arrows[i]['y']-.1
 				end
 			end
-		
-			if arrows[i]['firedFrom'] == 'up' then
-				arrows[i]['y'] = arrows[i]['y']-1
-			end
 			if arrows[i]['firedFrom'] == 'right' then
-				arrows[i]['x'] = arrows[i]['x']+1
+				if map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])+1] == 3 then
+					arrows[i]['isLive'] = false
+					arrows[i]['x'] = math.ceil(arrows[i]['x'])
+				else
+					arrows[i]['x'] = arrows[i]['x']+.1
+				end
 			end
 			if arrows[i]['firedFrom'] == 'down' then
-				arrows[i]['y'] = arrows[i]['y']+1
+				if map[math.ceil(arrows[i]['y'])+1][math.ceil(arrows[i]['x'])] == 3 then
+					arrows[i]['isLive'] = false
+					arrows[i]['y'] = math.ceil(arrows[i]['y'])
+				else
+					arrows[i]['y'] = arrows[i]['y']+.1
+				end
 			end
 			if arrows[i]['firedFrom'] == 'left' then
-				arrows[i]['x'] = arrows[i]['x']-1
+				if map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])-1] == 3 then
+					arrows[i]['isLive'] = false
+					arrows[i]['x'] = math.ceil(arrows[i]['x'])
+				else
+					arrows[i]['x'] = arrows[i]['x']-.1
+				end
 			end
 		end
+		
 	end
 end
 
