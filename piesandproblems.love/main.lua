@@ -204,18 +204,29 @@ end
 
 function checkArrows(dt)
 	for i=1,#arrows do
-		if arrows[i]['isLive'] == true then
-
-		end
-		
+		collision = false
 		if arrows[i]['isLive'] == true then
 			if arrows[i]['firedFrom'] == 'up' then
 				if tileProperties[map[math.ceil(arrows[i]['y'])-1][math.ceil(arrows[i]['x'])]] == 'solid' then
 					arrows[i]['isLive'] = false
 					arrows[i]['y'] = math.ceil(arrows[i]['y'])
 				else
+					for j=1, #baddies do
+						if math.ceil(arrows[i]['y'])-1 == baddies[j]['y'] then
+							if arrows[i]['x'] == baddies[j]['x'] then
+								arrows[i]['x'] = baddies[j]['x']
+								arrows[i]['y'] = baddies[j]['y']
+								arrows[i]['isLive'] = false
+								collision = true
+							end
+						end
+					end
+				end
+				
+				if collision == false then
 					arrows[i]['y'] = arrows[i]['y']-.1
 				end
+				
 			end
 			if arrows[i]['firedFrom'] == 'right' then
 				if tileProperties[map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])+1]] == 'solid' then
@@ -391,10 +402,22 @@ function spawnArrow()
 end
 
 function movePlayer(direction)
+	collision = false
 	if direction == "left" then
 		player['spriteX'] = 96
 		if tileProperties[map[player['y']][(player['x'])-1]] ~= 'solid' then
-			player['x'] = player['x']-1 
+			
+			for i=1, #baddies do
+				if player['x']-1 == baddies[1]['x'] then
+					if player['y'] == baddies[1]['y'] then
+						collision = true
+					end
+				end
+			end
+			
+			if collision == false then
+				player['x'] = player['x']-1 
+			end
 		end
 		player['facing'] = "left"
 		turn = turn+1;
@@ -403,7 +426,17 @@ function movePlayer(direction)
 	if direction == "right" then
 		player['spriteX'] = 0
 		if tileProperties[map[player['y']][(player['x'])+1]] ~= 'solid' then
-			player['x'] = player['x']+1 
+			for i=1, #baddies do
+				if player['x']+1 == baddies[1]['x'] then
+					if player['y'] == baddies[1]['y'] then
+						collision = true
+					end
+				end
+			end
+			
+			if collision == false then
+				player['x'] = player['x']+1 
+			end
 		end
 		player['facing'] = "right"
 		turn = turn+1;
@@ -412,7 +445,17 @@ function movePlayer(direction)
 	if direction == "up" then
 		player['spriteX'] = 144
 		if tileProperties[map[player['y']-1][(player['x'])]] ~= 'solid' then
-			player['y'] = player['y']-1 
+			for i=1, #baddies do
+				if player['x'] == baddies[1]['x'] then
+					if player['y']-1 == baddies[1]['y'] then
+						collision = true
+					end
+				end
+			end
+			
+			if collision == false then
+				player['y'] = player['y']-1 
+			end
 		end
 		player['facing'] = "up"
 		turn = turn+1;
@@ -421,7 +464,17 @@ function movePlayer(direction)
 	if direction == "down" then
 		player['spriteX'] = 48
 		if tileProperties[map[player['y']+1][(player['x'])]] ~= 'solid' then
-			player['y'] = player['y']+1 
+			for i=1, #baddies do
+				if player['x'] == baddies[1]['x'] then
+					if player['y']+1 == baddies[1]['y'] then
+						collision = true
+					end
+				end
+			end
+			
+			if collision == false then
+				player['y'] = player['y']+1
+			end
 		end
 		player['facing'] = "down"
 		turn = turn+1;
