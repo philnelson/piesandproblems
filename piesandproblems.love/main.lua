@@ -39,6 +39,28 @@ map = {
 	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
 }
 
+revealedTiles = {
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},	
+}
+
+unseenTile = love.graphics.newColor( 24, 24, 24, 255 )
+seenTile = love.graphics.newColor( 24, 24, 24, 0 )
+
 player = {x=0,y=0,spriteX=0,spriteY=(gridSize*29),vitality='alive',hp=0,str=0,def=1,level=1,status=0,facing='right',angle=0,arrowHave=2}
 baddies = {}
 arrows = {}
@@ -122,6 +144,8 @@ function draw()
 	end
 	
 	love.graphics.draws( sprites, player['x']*gridSize-24, player['y']*gridSize-24, player['spriteX'], player['spriteY'], gridSize, gridSize,player['angle'])
+	
+	revealTiles(currentFloor)
 
 	if optionsOpen == true then
 		love.graphics.setColor( 255, 255, 255 )
@@ -134,7 +158,35 @@ function draw()
 		love.graphics.setFont(font)
 		love.graphics.draw("Volume: " .. (volume*100) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
 	end
+	
+	
+end
 
+function revealTiles(floor)
+	-- draw main background
+	revealedTiles[player['y']][player['x']] = 1
+	revealedTiles[player['y']-1][player['x']] = 1
+	revealedTiles[player['y']+1][player['x']] = 1
+	revealedTiles[player['y']][player['x']-1] = 1
+	revealedTiles[player['y']][player['x']+1] = 1
+	revealedTiles[player['y']+1][player['x']+1] = 1
+	revealedTiles[player['y']-1][player['x']-1] = 1
+	revealedTiles[player['y']+1][player['x']-1] = 1
+	revealedTiles[player['y']+1][player['x']+1] = 1
+	revealedTiles[player['y']-1][player['x']+1] = 1
+	
+	for y=3, screenHeight do
+		for x=1, screenWidth do
+			if revealedTiles[y][x] == 0 then
+				love.graphics.setColor(unseenTile)
+				love.graphics.rectangle( 0, (x*gridSize)-gridSize, (y*gridSize)-gridSize,gridSize, gridSize )
+			else
+				love.graphics.setColor(seenTile)
+				love.graphics.rectangle( 0, (x*gridSize)-gridSize, (y*gridSize)-gridSize,gridSize, gridSize )
+			end
+		end
+	end
+	love.graphics.setColor(255,255, 255)
 end
 
 function update(dt)
