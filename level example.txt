@@ -1,0 +1,39 @@
+THIS IS THE GRID. The top two rows SHOULD NOT be overwritten, as they contain part of the UI, and player movement is impossible up there anyway.
+
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+0 = nothin' special, just floor
+1 = protected tiles (e.g. UI display at the top)
+2 = impassible, invincible, wall tiles
+3 = ANY wall tile, incl. breakable ones
+4 = any kind of goodie: treasure, weapon, etc
+5 = baddie
+6 = empty path, cannot be obstructed
+8 = stairs up
+9 = stairs down
+
+OTHER NECESSARY VARIABLES
+
+-- Set sprites for our background and main walls
+
+tileProperties = {}
+tileProperties[3] = 'solid'
+tileProperties[190] = 'background'
+
+-- Set the sprite for the stairs
+map[downStairsLocationY][downStairsLocationX] = 24

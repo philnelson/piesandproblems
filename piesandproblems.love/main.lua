@@ -20,30 +20,6 @@ love.graphics.setLineWidth( 4 )
 levels = {}
 levels[1] = {name="Kiss The Sky"}
 
--- First two rows are covered by the display
-map = {
-	{190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190},
-	{190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190},
-	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,3},
-	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
-}
-
-tileProperties = {}
-tileProperties[3] = 'solid'
-tileProperties[190] = 'background'
-
 revealedTiles = {
 	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
 	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -71,9 +47,6 @@ baddies = {}
 
 downStairsLocationX = math.random(2,screenWidth-1)
 downStairsLocationY = math.random(4,screenHeight-1)
-
--- Set the sprite for the stairs
-map[downStairsLocationY][downStairsLocationX] = 24
 
 turn = 0
 currentFloor = 0
@@ -171,10 +144,6 @@ function draw()
 		love.graphics.setFont(font)
 		love.graphics.draw("Volume: " .. (volume*100) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
 	end
-	
-end
-
-function moveBaddie(baddie)
 	
 end
 
@@ -455,7 +424,7 @@ end
 function spawnBaddie(type)
 	i = #baddies+1
 	if type == 'orc' then
-		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2),atk=diceRoll(1),def=diceRoll(1),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1}
+		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2),atk=diceRoll(1),def=diceRoll(1),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,sawPlayer=false}
 		
 		baddies[i]['totalHP'] = baddies[i]['hp']
 	end
@@ -568,6 +537,10 @@ function movePlayer(direction)
 	end
 end
 
+function moveBaddie(baddie)
+	
+end
+
 function showOptions()
 	if optionsOpen == true then
 		optionsOpen = false
@@ -578,6 +551,8 @@ function showOptions()
 end
 
 function generateRoom(floor)
+	require('levels/'..floor..'.lua')
+
 	-- draw main background
 	love.graphics.setColor( 242, 220, 144 )
 	love.graphics.rectangle( 0, 0, topMenuHeight, width, height )
