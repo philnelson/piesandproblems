@@ -39,6 +39,10 @@ map = {
 	{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
 }
 
+tileProperties = {}
+tileProperties[3] = 'solid'
+tileProperties[190] = 'background'
+
 revealedTiles = {
 	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
 	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -189,6 +193,10 @@ function revealTiles(floor)
 	love.graphics.setColor(255,255, 255)
 end
 
+function moveTowardPlayer(thisX, thisY)
+	
+end
+
 function update(dt)
 	elapsed = math.floor(love.timer.getTime( ))
 	checkArrows(dt)
@@ -202,7 +210,7 @@ function checkArrows(dt)
 		
 		if arrows[i]['isLive'] == true then
 			if arrows[i]['firedFrom'] == 'up' then
-				if map[math.ceil(arrows[i]['y'])-1][math.ceil(arrows[i]['x'])] == 3 then
+				if tileProperties[map[math.ceil(arrows[i]['y'])-1][math.ceil(arrows[i]['x'])]] == 'solid' then
 					arrows[i]['isLive'] = false
 					arrows[i]['y'] = math.ceil(arrows[i]['y'])
 				else
@@ -210,7 +218,7 @@ function checkArrows(dt)
 				end
 			end
 			if arrows[i]['firedFrom'] == 'right' then
-				if map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])+1] == 3 then
+				if tileProperties[map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])+1]] == 'solid' then
 					arrows[i]['isLive'] = false
 					arrows[i]['x'] = math.ceil(arrows[i]['x'])
 				else
@@ -218,7 +226,7 @@ function checkArrows(dt)
 				end
 			end
 			if arrows[i]['firedFrom'] == 'down' then
-				if map[math.ceil(arrows[i]['y'])+1][math.ceil(arrows[i]['x'])] == 3 then
+				if tileProperties[map[math.ceil(arrows[i]['y'])+1][math.ceil(arrows[i]['x'])]] == 'solid' then
 					arrows[i]['isLive'] = false
 					arrows[i]['y'] = math.ceil(arrows[i]['y'])
 				else
@@ -226,7 +234,7 @@ function checkArrows(dt)
 				end
 			end
 			if arrows[i]['firedFrom'] == 'left' then
-				if map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])-1] == 3 then
+				if tileProperties[map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])-1]] == 'solid' then
 					arrows[i]['isLive'] = false
 					arrows[i]['x'] = math.ceil(arrows[i]['x'])
 				else
@@ -259,16 +267,16 @@ end
 
 function keypressed(key)
 	if key == love.key_right then 
-		moveCharacter("right")
+		movePlayer("right")
 	end
 	if key == love.key_left then 
-		moveCharacter("left")
+		movePlayer("left")
 	end
 	if key == love.key_up then 
-		moveCharacter("up")
+		movePlayer("up")
 	end
 	if key == love.key_down then 
-		moveCharacter("down")
+		movePlayer("down")
 	end
 	if key == love.key_space then 
 		charShoot()
@@ -382,10 +390,10 @@ function spawnArrow()
 	love.audio.play(playerShootSound)
 end
 
-function moveCharacter(direction)
+function movePlayer(direction)
 	if direction == "left" then
 		player['spriteX'] = 96
-		if map[player['y']][(player['x'])-1] ~= 3 then
+		if tileProperties[map[player['y']][(player['x'])-1]] ~= 'solid' then
 			player['x'] = player['x']-1 
 		end
 		player['facing'] = "left"
@@ -394,7 +402,7 @@ function moveCharacter(direction)
 
 	if direction == "right" then
 		player['spriteX'] = 0
-		if map[player['y']][(player['x']+1)] ~= 3 then
+		if tileProperties[map[player['y']][(player['x'])+1]] ~= 'solid' then
 			player['x'] = player['x']+1 
 		end
 		player['facing'] = "right"
@@ -403,7 +411,7 @@ function moveCharacter(direction)
 
 	if direction == "up" then
 		player['spriteX'] = 144
-		if map[(player['y']-1)][player['x']] ~= 3 then
+		if tileProperties[map[player['y']-1][(player['x'])]] ~= 'solid' then
 			player['y'] = player['y']-1 
 		end
 		player['facing'] = "up"
@@ -412,7 +420,7 @@ function moveCharacter(direction)
 
 	if direction == "down" then
 		player['spriteX'] = 48
-		if map[(player['y']+1)][player['x']] ~= 3 then
+		if tileProperties[map[player['y']+1][(player['x'])]] ~= 'solid' then
 			player['y'] = player['y']+1 
 		end
 		player['facing'] = "down"
@@ -455,7 +463,7 @@ end
 function getGoodX(spriteWidth)
 	goodX = false
 	while goodX == false do
-		thisX = math.random(1,screenWidth-1)
+		thisX = math.random(2,screenWidth-1)
 		goodX = true
 	end
 	return thisX
@@ -464,7 +472,7 @@ end
 function getGoodY(spriteHeight)
 	goodY = false
 	while goodY == false do
-		thisY = math.random(3,screenHeight-1)
+		thisY = math.random(4,screenHeight-1)
 		goodY = true
 	end
 	return thisY
