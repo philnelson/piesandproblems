@@ -22,12 +22,14 @@ map = {
 tileProperties = {}
 tileProperties[496] = 'solid'
 tileProperties[512] = 'solid'
-tileProperties[513] = 'solid'
 tileProperties[515] = 'solid'
-tileProperties[688] = 'background'
+tileProperties[686] = 'background'
+tileProperties[567] = 'background'
 
 tileTypes = {}
-tileTypes[0] = {671}
+tileTypes[0] = {686,567}
 tileTypes[3] = {512}
 tileTypes[8] = {519}
 tileTypes[9] = {522,523}
+
+numberOfBaddies = 1

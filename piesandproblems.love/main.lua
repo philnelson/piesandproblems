@@ -64,15 +64,13 @@ animationsRun = 0
 optionsOpen = false
 
 baddiesAlive = 0
+baddiesKilled = 0
 
 doorOpened = false
 mapGenerated = false
 
 function load()
 	spawnPlayer()
-	
-	spawnBaddie('orc')
-
 	loadSounds()
 
 	headerFont = love.graphics.newFont('04B_03__.TTF', 48)
@@ -97,6 +95,10 @@ end
 function draw()
 	generateRoom(currentFloor)
 	
+	if #baddies < numberOfBaddies then
+		spawnBaddie('orc')
+	end
+	
 	-- draw UI text
 	love.graphics.setColor( 255, 255, 255 )
 	love.graphics.draw("Orc: "..baddies[1]['x']..", "..baddies[1]['y'], 5, 24)
@@ -106,8 +108,10 @@ function draw()
 	love.graphics.setColor(0,0,255)
 	love.graphics.draw("DEF: "..baddies[1]['def'],205,48)
 	love.graphics.setColor( 255, 255, 255 )
-	love.graphics.draw(math.floor(timePassed-playerMoved),5,72)
-
+	if baddies[1]['canSeePlayer'] == true then
+		love.graphics.draw('can see you!',5,72)
+	end
+		
 	love.graphics.draw("You: "..player['x']..", "..player['y'].." = "..map[player['y']][player['x']], 600, 24)
 	love.graphics.draw("HP: "..player['hp'].."/"..player['totalHP'],600,48)
 	love.graphics.setColor(255,0,0)
@@ -230,11 +234,13 @@ function update(dt)
 		moveBaddie(i)
 	end
 	
-	if doorOpened == false then
-		if baddiesAlive == 0 then
-			doorOpen = love.audio.newSound('shaktool_yowzer_event_1.wav')
-			openDoor()
-			love.audio.play(doorOpen)
+	if baddiesKilled > 0 then
+		if doorOpened == false then
+			if baddiesAlive == 0 then
+				doorOpen = love.audio.newSound('shaktool_yowzer_event_1.wav')
+				openDoor()
+				love.audio.play(doorOpen)
+			end
 		end
 	end
 	
@@ -554,6 +560,7 @@ function killBaddie(baddie)
 	baddies[baddie]['hp'] = 0
 	baddies[baddie]['vitality'] = 'dead'
 	baddiesAlive = baddiesAlive-1
+	baddiesKilled = baddiesKilled+1
 end
 
 function diceRoll(n,minimum)
@@ -602,7 +609,7 @@ end
 function spawnBaddie(type)
 	i = #baddies+1
 	if type == 'orc' then
-		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,sawPlayer=false,scale=1,deathAnimation=0,deathSpriteX=(15*gridSize),deathSpriteY=(9*gridSize)}
+		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,lastSawPlayer='none',scale=1,deathAnimation=0,deathSpriteX=(15*gridSize),deathSpriteY=(9*gridSize),canSeePlayer=false}
 		
 		baddies[i]['totalHP'] = baddies[i]['hp']
 		baddiesAlive = baddiesAlive+1
@@ -771,7 +778,17 @@ function arrowGet(id)
 end
 
 function moveBaddie(baddie)
-	
+	for y=-1, 1 do
+		for x=-1, 1 do
+			if baddies[baddie]['y']+y == player['y'] then
+				if baddies[baddie]['x']+x == player['x'] then
+					baddies[baddie]['canSeePlayer'] = true
+					sawX = baddies[baddie]['x']+x
+					sawY = baddies[baddie]['y']+y
+				end
+			end
+		end
+	end
 end
 
 function showOptions()
@@ -809,7 +826,8 @@ function generateRoom(floor)
 			
 			end
 			if map[y][x] == 3 then
-				map[y][x] = tileTypes[3][math.random(1,#tileTypes[3])]
+				--map[y][x] = tileTypes[3][math.random(1,#tileTypes[3])]
+				map[y][x] = 512
 			end
 			if map[y][x] == 2 then
 				map[y][x] = 496
@@ -832,20 +850,16 @@ function generateRoom(floor)
 	-- draw main background
 	love.graphics.setColor( 242, 220, 144 )
 	love.graphics.rectangle( 0, 0, topMenuHeight, width, height )
+	
 	-- draw secondary background
 	love.graphics.setColor( 56, 50, 34 )
 	love.graphics.rectangle(0,48,topMenuHeight+48,width-96, (height-96)-(topMenuHeight))
 
 	for y=3, screenHeight do
 		for x=1, screenWidth do
-			envSpriteY = math.ceil(((map[y][x]-(spriteRowOffsets['environment']*16))*48)/768)
-			envSpriteX = math.floor((map[y][x]-(spriteRowOffsets['environment']*16)))-16
-			while (envSpriteX > 16) do
-				envSpriteX = envSpriteX - 16
-			end
-			if(envSpriteX < 0) then
-				envSpriteX = 0
-			end
+			envSpriteY = math.floor((map[y][x]-(spriteRowOffsets['environment']*16))/16)
+			envSpriteX = math.floor((map[y][x]-(spriteRowOffsets['environment']*16)))-(envSpriteY*16)
+
 			love.graphics.draws( environment, (x*gridSize)-24, (y*gridSize)-24, (envSpriteX*gridSize), (envSpriteY*gridSize),gridSize, gridSize )
 		end
 	end
