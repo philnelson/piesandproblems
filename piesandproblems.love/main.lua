@@ -129,7 +129,7 @@ function draw()
 			if baddies[i]['vitality'] == 'dead' then
 				baddies[i]['angle'] = -90
 			end
-			love.graphics.draws( sprites, baddies[i]['x']*gridSize-24, baddies[i]['y']*gridSize-24, baddies[i]['spriteX'], baddies[i]['spriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'])
+			love.graphics.draws( sprites, baddies[i]['x']*gridSize-24, baddies[i]['y']*gridSize-24, baddies[i]['spriteX'], baddies[i]['spriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'],baddies[i]['scale'])
 		end
 	end
 	
@@ -200,9 +200,38 @@ end
 
 function update(dt)
 	checkArrows(dt)
+	for i=1,#baddies do
+		if baddies[i]['vitality'] == 'dead' then
+			if baddies[i]['deathAnimation'] == 2 then
+				baddies[i]['scale'] = baddies[i]['scale']-.1
+				if baddies[i]['scale'] <= 1 then
+					baddies[i]['scale'] = 1
+					baddies[i]['deathAnimation'] = 3
+					love.audio.play(deathRattle)
+				end
+			end
+			if baddies[i]['deathAnimation'] == 0 then
+				baddies[i]['scale'] = baddies[i]['scale']+.1
+				if baddies[i]['scale'] >= 2 then
+					baddies[i]['deathAnimation'] = 2
+				end
+			end
+		end
+	end
 end
 
 function checkArrows(dt)
+	player['liveArrows'] = 0
+	for i=1, #arrows do
+		if arrows[i]['isLive'] == true then
+			player['liveArrows'] = player['liveArrows']+1
+		end
+		if player['liveArrows'] == 2 then
+			player['canShoot'] = false
+		else
+			player['canShoot'] = true
+		end
+	end
 	for i=1,#arrows do
 		collision = false
 		if arrows[i]['isLive'] == true then
@@ -327,7 +356,7 @@ function keypressed(key)
 		movePlayer("down")
 	end
 	if key == love.key_space then 
-		charShoot()
+		playerShoot()
 	end
 	if key == love.key_r then
 		love.system.restart( )
@@ -374,6 +403,7 @@ function loadSounds()
 	weaponHitSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact01.wav')
 	weaponHitSound2 = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact02.wav')
 	arrowMissSound = love.audio.newSound('shaktool_yowzer_thud_2.wav')
+	deathRattle = love.audio.newSound('shaktool_yowzer_flop.wav')
 
 	uiOpenSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/open01.wav')
 	
@@ -395,6 +425,7 @@ function damageBaddie(baddie,kind)
 		if baddies[baddie]['hp'] <= 0 then
 			baddies[baddie]['hp'] = 0
 			baddies[baddie]['vitality'] = 'dead'
+			baddieDied = love.timer.getTime()
 		end
 		return true
 	else
@@ -430,7 +461,7 @@ function levelUp(char)
 end
 
 function spawnPlayer()
-	player = {x=0,y=0,spriteX=0,spriteY=(gridSize*29),vitality='alive',hp=0,atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,arrowHave=2,sight=2}
+	player = {x=0,y=0,spriteX=0,spriteY=(gridSize*29),vitality='alive',hp=0,atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,arrowHave=2,sight=2,canShoot=true,liveArrows=0}
 	arrows = {}
 	playerMissed = false
 
@@ -449,7 +480,7 @@ end
 function spawnBaddie(type)
 	i = #baddies+1
 	if type == 'orc' then
-		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,sawPlayer=false}
+		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,sawPlayer=false,scale=1,deathAnimation=0}
 		
 		baddies[i]['totalHP'] = baddies[i]['hp']
 	end
@@ -468,11 +499,13 @@ function charAttack()
 	turn = turn+1
 end
 
-function charShoot()
+function playerShoot()
 	if player['arrowHave'] ~= 0 then
-		spawnArrow()
-		player['arrowHave'] = player['arrowHave']-1
-		turn = turn+1
+		if player['canShoot'] == true then
+			spawnArrow()
+			player['arrowHave'] = player['arrowHave']-1
+			turn = turn+1
+		end
 	end
 end
 
@@ -589,7 +622,13 @@ end
 
 function generateRoom(floor)
 	require('levels/'..floor..'.lua')
-
+	doorOpened = false
+	if doorOpened == true then
+		map[downStairsLocationY][downStairsLocationX] = exitOpenTile
+	else
+		map[downStairsLocationY][downStairsLocationX] = exitClosedTile
+	end
+	
 	-- draw main background
 	love.graphics.setColor( 242, 220, 144 )
 	love.graphics.rectangle( 0, 0, topMenuHeight, width, height )

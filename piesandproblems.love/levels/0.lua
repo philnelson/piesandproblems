@@ -22,6 +22,5 @@ map = {
 tileProperties = {}
 tileProperties[3] = 'solid'
 tileProperties[190] = 'background'
-
--- Set the sprite for the stairs
-map[downStairsLocationY][downStairsLocationX] = 24
+exitClosedTile = 26
+exitOpenTile = 24
