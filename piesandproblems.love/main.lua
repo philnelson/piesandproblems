@@ -119,11 +119,16 @@ function draw()
 				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,385, 240,gridSize,gridSize)
 			end
 		end
-		love.graphics.draw(math.ceil(arrows[i]['x'])..", "..math.ceil(arrows[i]['y']),arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
+		if debug == true then
+			love.graphics.draw(math.ceil(arrows[i]['x'])..", "..math.ceil(arrows[i]['y']),arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
+		end
 	end
 	
 	for i=1,#baddies do
 		if #baddies > 0 then
+			if baddies[i]['vitality'] == 'dead' then
+				baddies[i]['angle'] = -90
+			end
 			love.graphics.draws( sprites, baddies[i]['x']*gridSize-24, baddies[i]['y']*gridSize-24, baddies[i]['spriteX'], baddies[i]['spriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'])
 		end
 	end
@@ -207,13 +212,15 @@ function checkArrows(dt)
 					arrows[i]['y'] = math.ceil(arrows[i]['y'])
 				else
 					for j=1, #baddies do
-						if math.ceil(arrows[i]['y'])-1 == baddies[j]['y'] then
-							if arrows[i]['x'] == baddies[j]['x'] then
-								arrows[i]['x'] = baddies[j]['x']
-								arrows[i]['y'] = baddies[j]['y']
-								if damageBaddie(j) == true then
-									arrows[i]['isLive'] = false
-									collision = true
+						if baddies[j]['vitality'] == 'alive' then
+							if math.ceil(arrows[i]['y'])-1 == baddies[j]['y'] then
+								if arrows[i]['x'] == baddies[j]['x'] then
+									arrows[i]['x'] = baddies[j]['x']
+									arrows[i]['y'] = baddies[j]['y']
+									if damageBaddie(j,'arrow') == true then
+										arrows[i]['isLive'] = false
+										collision = true
+									end
 								end
 							end
 						end
@@ -231,13 +238,15 @@ function checkArrows(dt)
 					arrows[i]['x'] = math.ceil(arrows[i]['x'])
 				else
 					for j=1, #baddies do
-						if math.ceil(arrows[i]['x'])+1 == baddies[j]['x'] then
-							if arrows[i]['y'] == baddies[j]['y'] then
-								arrows[i]['x'] = baddies[j]['x']
-								arrows[i]['y'] = baddies[j]['y']
-								if damageBaddie(j) == true then
-									arrows[i]['isLive'] = false
-									collision = true
+						if baddies[j]['vitality'] == 'alive' then
+							if math.ceil(arrows[i]['x'])+1 == baddies[j]['x'] then
+								if arrows[i]['y'] == baddies[j]['y'] then
+									arrows[i]['x'] = baddies[j]['x']
+									arrows[i]['y'] = baddies[j]['y']
+									if damageBaddie(j,'arrow') == true then
+										arrows[i]['isLive'] = false
+										collision = true
+									end
 								end
 							end
 						end
@@ -255,13 +264,15 @@ function checkArrows(dt)
 					arrows[i]['y'] = math.ceil(arrows[i]['y'])
 				else
 					for j=1, #baddies do
-						if math.ceil(arrows[i]['y']+1) == baddies[j]['y'] then
-							if arrows[i]['x'] == baddies[j]['x'] then
-								arrows[i]['x'] = baddies[j]['x']
-								arrows[i]['y'] = baddies[j]['y']
-								if damageBaddie(j) == true then
-									arrows[i]['isLive'] = false
-									collision = true
+						if baddies[j]['vitality'] == 'alive' then
+							if math.ceil(arrows[i]['y']+1) == baddies[j]['y'] then
+								if arrows[i]['x'] == baddies[j]['x'] then
+									arrows[i]['x'] = baddies[j]['x']
+									arrows[i]['y'] = baddies[j]['y']
+									if damageBaddie(j,'arrow') == true then
+										arrows[i]['isLive'] = false
+										collision = true
+									end
 								end
 							end
 						end
@@ -279,13 +290,15 @@ function checkArrows(dt)
 					arrows[i]['x'] = math.ceil(arrows[i]['x'])
 				else
 					for j=1, #baddies do
-						if math.ceil(arrows[i]['x']-1) == baddies[j]['x'] then
-							if arrows[i]['y'] == baddies[j]['y'] then
-								arrows[i]['x'] = baddies[j]['x']
-								arrows[i]['y'] = baddies[j]['y']
-								if damageBaddie(j) == true then
-									arrows[i]['isLive'] = false
-									collision = true
+						if baddies[j]['vitality'] == 'alive' then
+							if math.ceil(arrows[i]['x']-1) == baddies[j]['x'] then
+								if arrows[i]['y'] == baddies[j]['y'] then
+									arrows[i]['x'] = baddies[j]['x']
+									arrows[i]['y'] = baddies[j]['y']
+									if damageBaddie(j,'arrow') == true then
+										arrows[i]['isLive'] = false
+										collision = true
+									end
 								end
 							end
 						end
@@ -367,13 +380,22 @@ function loadSounds()
 	mysteriousItem = love.audio.newSound('MysteriousItem1.wav')
 end
 
-function damageBaddie(baddie)
+function damageBaddie(baddie,kind)
 	attackRoll = math.random(0,player['atk'])
 	defRoll = math.random(0,baddies[baddie]['def'])
 	if attackRoll > defRoll then
 		damageTaken = attackRoll - defRoll
 		baddies[baddie]['hp'] = baddies[baddie]['hp']-damageTaken
-		love.audio.play(weaponHitSound2)
+		if kind == 'arrow' then
+			love.audio.play(weaponHitSound2)
+		end
+		if kind == 'sword' then
+			love.audio.play(weaponHitSound)
+		end
+		if baddies[baddie]['hp'] <= 0 then
+			baddies[baddie]['hp'] = 0
+			baddies[baddie]['vitality'] = 'dead'
+		end
 		return true
 	else
 		playerMissed = true
@@ -381,12 +403,15 @@ function damageBaddie(baddie)
 	end
 end
 
-function diceRoll(n)
+function diceRoll(n,minimum)
 	total = 0
 	for i=1, n do
-		total = total+math.random(1,6)
+		roll = math.random(1,6)
+		total = total+roll
 	end
-	
+	if total < minimum then
+		total = minimum
+	end
 	return total
 end
 
@@ -405,11 +430,11 @@ function levelUp(char)
 end
 
 function spawnPlayer()
-	player = {x=0,y=0,spriteX=0,spriteY=(gridSize*29),vitality='alive',hp=0,atk=diceRoll(1),def=diceRoll(1),level=1,status=0,facing='right',angle=0,arrowHave=2,sight=2}
+	player = {x=0,y=0,spriteX=0,spriteY=(gridSize*29),vitality='alive',hp=0,atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,arrowHave=2,sight=2}
 	arrows = {}
 	playerMissed = false
 
-	player['hp'] = diceRoll(2)
+	player['hp'] = diceRoll(2,3)
 	player['totalHP'] = player['hp']
 	
 	-- Position character
@@ -424,7 +449,7 @@ end
 function spawnBaddie(type)
 	i = #baddies+1
 	if type == 'orc' then
-		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2),atk=diceRoll(1),def=diceRoll(1),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,sawPlayer=false}
+		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,sawPlayer=false}
 		
 		baddies[i]['totalHP'] = baddies[i]['hp']
 	end
@@ -464,9 +489,12 @@ function movePlayer(direction)
 		if tileProperties[map[player['y']][(player['x'])-1]] ~= 'solid' then
 			
 			for i=1, #baddies do
-				if player['x']-1 == baddies[1]['x'] then
-					if player['y'] == baddies[1]['y'] then
-						collision = true
+				if baddies[i]['vitality'] == 'alive' then
+					if player['x']-1 == baddies[i]['x'] then
+						if player['y'] == baddies[i]['y'] then
+							collision = true
+							damageBaddie(i,'sword')
+						end
 					end
 				end
 			end
@@ -483,9 +511,12 @@ function movePlayer(direction)
 		player['spriteX'] = 0
 		if tileProperties[map[player['y']][(player['x'])+1]] ~= 'solid' then
 			for i=1, #baddies do
-				if player['x']+1 == baddies[1]['x'] then
-					if player['y'] == baddies[1]['y'] then
-						collision = true
+				if baddies[i]['vitality'] == 'alive' then
+					if player['x']+1 == baddies[i]['x'] then
+						if player['y'] == baddies[i]['y'] then
+							collision = true
+							damageBaddie(i,'sword')
+						end
 					end
 				end
 			end
@@ -502,9 +533,12 @@ function movePlayer(direction)
 		player['spriteX'] = 144
 		if tileProperties[map[player['y']-1][(player['x'])]] ~= 'solid' then
 			for i=1, #baddies do
-				if player['x'] == baddies[1]['x'] then
-					if player['y']-1 == baddies[1]['y'] then
-						collision = true
+				if baddies[i]['vitality'] == 'alive' then
+					if player['x'] == baddies[i]['x'] then
+						if player['y']-1 == baddies[i]['y'] then
+							collision = true
+							damageBaddie(i,'sword')
+						end
 					end
 				end
 			end
@@ -521,9 +555,12 @@ function movePlayer(direction)
 		player['spriteX'] = 48
 		if tileProperties[map[player['y']+1][(player['x'])]] ~= 'solid' then
 			for i=1, #baddies do
-				if player['x'] == baddies[1]['x'] then
-					if player['y']+1 == baddies[1]['y'] then
-						collision = true
+				if baddies[i]['vitality'] == 'alive' then
+					if player['x'] == baddies[i]['x'] then
+						if player['y']+1 == baddies[i]['y'] then
+							collision = true
+							damageBaddie(i,'sword')
+						end
 					end
 				end
 			end

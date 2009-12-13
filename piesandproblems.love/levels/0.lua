@@ -19,7 +19,6 @@ map = {
 }
 
 -- Set sprites for our background and main walls
-
 tileProperties = {}
 tileProperties[3] = 'solid'
 tileProperties[190] = 'background'
