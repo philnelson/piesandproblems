@@ -1,3 +1,6 @@
+timePassed = 0
+playerMoved = 0
+
 debug = true
 
 screenWidth = 21
@@ -19,6 +22,7 @@ love.graphics.setLineWidth( 4 )
 
 levels = {}
 levels[1] = {name="Kiss The Sky"}
+messages = {}
 
 revealedTiles = {
 	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -94,7 +98,8 @@ function draw()
 	love.graphics.setColor(0,0,255)
 	love.graphics.draw("DEF: "..baddies[1]['def'],205,48)
 	love.graphics.setColor( 255, 255, 255 )
-	
+	love.graphics.draw(math.floor(timePassed-playerMoved),5,72)
+
 	love.graphics.draw("You: "..player['x']..", "..player['y'].." = "..map[player['y']][player['x']], 600, 24)
 	love.graphics.draw("HP: "..player['hp'].."/"..player['totalHP'],600,48)
 	love.graphics.setColor(255,0,0)
@@ -118,9 +123,9 @@ function draw()
 			if arrows[i]['firedFrom'] == "left" then
 				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,385, 240,gridSize,gridSize)
 			end
-		end
-		if debug == true then
-			love.graphics.draw(math.ceil(arrows[i]['x'])..", "..math.ceil(arrows[i]['y']),arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
+			if debug == true then
+				love.graphics.draw(math.ceil(arrows[i]['x'])..", "..math.ceil(arrows[i]['y']),arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
+			end
 		end
 	end
 	
@@ -155,6 +160,60 @@ function draw()
 		love.graphics.draw("Volume: " .. (volume*100) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
 	end
 	
+	if #messages > 0 then
+		for i=1, #messages do
+			if messages[i]['alpha'] > 0 then
+				love.graphics.setColor( 0, 0, 0, messages[i]['alpha'] )
+				love.graphics.draw(messages[i]['message'],(messages[i]['x']*gridSize)-(gridSize*2),(messages[i]['y']*gridSize))
+				if messages[i]['type'] == 'get' then
+					love.graphics.setColor( 255, 255, 255, messages[i]['alpha'] )
+				end
+				if messages[i]['type'] == 'damage' then
+					love.graphics.setColor( 255, 0, 0, messages[i]['alpha'] )
+				end
+				love.graphics.draw(messages[i]['message'],(messages[i]['x']*gridSize)-(gridSize*2)+3,(messages[i]['y']*gridSize)+3)
+			end
+		end
+	end
+	love.graphics.setColor(255,255,255)
+	love.graphics.draw(love.timer.getFPS(),900,700)
+	
+end
+
+function update(dt)
+	checkArrows(dt)
+	for i=1,#baddies do
+		if baddies[i]['vitality'] == 'dead' then
+			if baddies[i]['deathAnimation'] == 2 then
+				baddies[i]['scale'] = baddies[i]['scale']-.1
+				if baddies[i]['scale'] <= 1 then
+					baddies[i]['scale'] = 1
+					baddies[i]['deathAnimation'] = 3
+					love.audio.play(deathRattle)
+				end
+			end
+			if baddies[i]['deathAnimation'] == 0 then
+				baddies[i]['scale'] = baddies[i]['scale']+.1
+				if baddies[i]['scale'] >= 2 then
+					baddies[i]['deathAnimation'] = 2
+				end
+			end
+		end
+	end
+	if love.joystick.getNumJoysticks( ) > 0 then
+		checkJoystick()
+	end
+	timePassed = timePassed+dt
+	
+	if #messages > 0 then
+		for i=1, #messages do
+			if messages[i]['started'] == 0 then
+				messages[i]['started'] = timePassed
+			end
+			messages[i]['alpha'] = messages[i]['alpha'] - 1
+			messages[i]['y'] = messages[i]['y']-.01
+		end
+	end
 end
 
 function bakeLights(floor)
@@ -203,24 +262,33 @@ function moveTowardPlayer(thisX, thisY)
 	
 end
 
-function update(dt)
-	checkArrows(dt)
-	for i=1,#baddies do
-		if baddies[i]['vitality'] == 'dead' then
-			if baddies[i]['deathAnimation'] == 2 then
-				baddies[i]['scale'] = baddies[i]['scale']-.1
-				if baddies[i]['scale'] <= 1 then
-					baddies[i]['scale'] = 1
-					baddies[i]['deathAnimation'] = 3
-					love.audio.play(deathRattle)
-				end
-			end
-			if baddies[i]['deathAnimation'] == 0 then
-				baddies[i]['scale'] = baddies[i]['scale']+.1
-				if baddies[i]['scale'] >= 2 then
-					baddies[i]['deathAnimation'] = 2
-				end
-			end
+function checkJoystick()
+	if timePassed-playerMoved >= .2 then
+		if love.joystick.isDown( 0, 1 ) then
+			playerShoot()
+			playerMoved = timePassed
+		end
+	end
+
+	if timePassed-playerMoved >= .1 then
+		shot = 0
+		joyPos1 = love.joystick.getAxis( 0, 0 )
+		joyPos2 = love.joystick.getAxis( 0, 1 )
+		if joyPos1 == 1 then
+			movePlayer('right')
+			playerMoved = timePassed
+		end
+		if joyPos1 == -1 then
+			movePlayer('left')
+			playerMoved = timePassed
+		end
+		if joyPos2 == -1 then
+			movePlayer('up')
+			playerMoved = timePassed
+		end
+		if joyPos2 == 1 then
+			movePlayer('down')
+			playerMoved = timePassed
 		end
 	end
 end
@@ -254,6 +322,8 @@ function checkArrows(dt)
 									if damageBaddie(j,'arrow') == true then
 										arrows[i]['isLive'] = false
 										collision = true
+									else
+										messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
 									end
 								end
 							end
@@ -280,6 +350,8 @@ function checkArrows(dt)
 									if damageBaddie(j,'arrow') == true then
 										arrows[i]['isLive'] = false
 										collision = true
+									else
+										messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
 									end
 								end
 							end
@@ -305,6 +377,8 @@ function checkArrows(dt)
 									if damageBaddie(j,'arrow') == true then
 										arrows[i]['isLive'] = false
 										collision = true
+									else
+										messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
 									end
 								end
 							end
@@ -331,6 +405,8 @@ function checkArrows(dt)
 									if damageBaddie(j,'arrow') == true then
 										arrows[i]['isLive'] = false
 										collision = true
+									else
+										messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
 									end
 								end
 							end
@@ -421,6 +497,7 @@ function damageBaddie(baddie,kind)
 	if attackRoll > defRoll then
 		damageTaken = attackRoll - defRoll
 		baddies[baddie]['hp'] = baddies[baddie]['hp']-damageTaken
+		messages[#messages+1] = {x=baddies[baddie]['x'],y=baddies[baddie]['y'],message="-"..damageTaken,alpha=255,started=0,type='damage'}
 		if kind == 'arrow' then
 			love.audio.play(ouch1)
 		end
@@ -610,6 +687,25 @@ function movePlayer(direction)
 		player['facing'] = "down"
 		turn = turn+1;
 	end
+	checkForPickups()
+end
+
+function checkForPickups()
+	for i=1, #arrows do
+		if arrows[i]['x'] == player['x'] then
+			if arrows[i]['y'] == player['y'] then
+				if arrows[i]['isOut'] == true then
+					arrowGet(i)
+				end
+			end
+		end
+	end
+end
+
+function arrowGet(id)
+	arrows[id]['isOut'] = false
+	player['arrowHave'] = player['arrowHave']+1
+	messages[#messages+1] = {x=player['x'],y=player['y'],message="Arrow Get!",alpha=255,started=0,type='get'}
 end
 
 function moveBaddie(baddie)
