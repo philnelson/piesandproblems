@@ -129,7 +129,12 @@ function draw()
 			if baddies[i]['vitality'] == 'dead' then
 				baddies[i]['angle'] = -90
 			end
-			love.graphics.draws( sprites, baddies[i]['x']*gridSize-24, baddies[i]['y']*gridSize-24, baddies[i]['spriteX'], baddies[i]['spriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'],baddies[i]['scale'])
+			if baddies[i]['deathAnimation'] == 3 then
+				baddies[i]['angle'] = 0
+				love.graphics.draws( sprites, baddies[i]['x']*gridSize-24, baddies[i]['y']*gridSize-24, baddies[i]['deathSpriteX'], baddies[i]['deathSpriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'],baddies[i]['scale'])
+			else
+				love.graphics.draws( sprites, baddies[i]['x']*gridSize-24, baddies[i]['y']*gridSize-24, baddies[i]['spriteX'], baddies[i]['spriteY'], gridSize*baddies[i]['sizeW'], gridSize*baddies[i]['sizeH'],baddies[i]['angle'],baddies[i]['scale'])
+			end
 		end
 	end
 	
@@ -296,7 +301,6 @@ function checkArrows(dt)
 						if baddies[j]['vitality'] == 'alive' then
 							if math.ceil(arrows[i]['y']+1) == baddies[j]['y'] then
 								if arrows[i]['x'] == baddies[j]['x'] then
-									arrows[i]['x'] = baddies[j]['x']
 									arrows[i]['y'] = baddies[j]['y']
 									if damageBaddie(j,'arrow') == true then
 										arrows[i]['isLive'] = false
@@ -398,12 +402,13 @@ function loadSounds()
 	overWorldTheme = love.audio.newSound('Mr Fluff.ogg')
 
 	playerSwordSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/attack03.wav')
-	playerShootSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/rocket01.wav')
+	playerShootSound = love.audio.newSound('shaktool_yowzer_laser_2.wav')
 
 	weaponHitSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact01.wav')
-	weaponHitSound2 = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact02.wav')
+--	weaponHitSound2 = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/impact02.wav')
+	ouch1 = love.audio.newSound('shaktool_yowzer_ouch_2.wav')
 	arrowMissSound = love.audio.newSound('shaktool_yowzer_thud_2.wav')
-	deathRattle = love.audio.newSound('shaktool_yowzer_flop.wav')
+	deathRattle = love.audio.newSound('shaktool_yowzer_blubber_1.wav')
 
 	uiOpenSound = love.audio.newSound('Stian_Stark_SFX_Pack_Vol_1/open01.wav')
 	
@@ -417,7 +422,7 @@ function damageBaddie(baddie,kind)
 		damageTaken = attackRoll - defRoll
 		baddies[baddie]['hp'] = baddies[baddie]['hp']-damageTaken
 		if kind == 'arrow' then
-			love.audio.play(weaponHitSound2)
+			love.audio.play(ouch1)
 		end
 		if kind == 'sword' then
 			love.audio.play(weaponHitSound)
@@ -480,7 +485,7 @@ end
 function spawnBaddie(type)
 	i = #baddies+1
 	if type == 'orc' then
-		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,sawPlayer=false,scale=1,deathAnimation=0}
+		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,sawPlayer=false,scale=1,deathAnimation=0,deathSpriteX=(15*gridSize),deathSpriteY=(9*gridSize)}
 		
 		baddies[i]['totalHP'] = baddies[i]['hp']
 	end
