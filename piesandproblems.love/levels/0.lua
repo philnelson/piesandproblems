@@ -32,4 +32,4 @@ tileTypes[3] = {512}
 tileTypes[8] = {519}
 tileTypes[9] = {522,523}
 
-numberOfBaddies = 10
+numberOfBaddies = 1

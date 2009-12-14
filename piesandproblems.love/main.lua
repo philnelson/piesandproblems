@@ -101,7 +101,7 @@ function draw()
 	
 	-- draw UI text
 	love.graphics.setColor( 255, 255, 255 )
-	love.graphics.draw("Orc: "..baddies[1]['x']..", "..baddies[1]['y'], 5, 24)
+	love.graphics.draw("Orc: "..baddies[1]['x']..", "..baddies[1]['y'].." ("..getSpaceFromXY(baddies[1]['x'],baddies[1]['y'])..")", 5, 24)
 	love.graphics.draw("HP "..baddies[1]['hp'].."/"..baddies[1]['totalHP'],5,48)
 	love.graphics.setColor(255,0,0)
 	love.graphics.draw("ATK: "..baddies[1]['atk'],115,48)
@@ -111,8 +111,11 @@ function draw()
 	if baddies[1]['canSeePlayer'] == true then
 		love.graphics.draw('can see you!',5,72)
 	end
-		
-	love.graphics.draw("You: "..player['x']..", "..player['y'].." = "..map[player['y']][player['x']], 600, 24)
+	
+	playerSpace = getSpaceFromXY(player['x'],player['y'])
+	playerXY = getXYFromSpace(playerSpace)
+	
+	love.graphics.draw("You: "..player['x']..", "..player['y'].." ("..playerSpace..") "..playerXY['x']..", "..playerXY['y'], 600, 24)
 	love.graphics.draw("HP: "..player['hp'].."/"..player['totalHP'],600,48)
 	love.graphics.setColor(255,0,0)
 	love.graphics.draw("ATK: "..player['atk'],715,48)
@@ -538,7 +541,7 @@ function damageBaddie(baddie,kind)
 	attackRoll = math.random(1,player['atk'])+1
 	defRoll = math.random(1,baddies[baddie]['def'])
 	if attackRoll > defRoll then
-		damageTaken = attackRoll - defRoll
+		damageTaken = diceRoll(1,1)
 		baddies[baddie]['hp'] = baddies[baddie]['hp']-damageTaken
 		messages[#messages+1] = {x=baddies[baddie]['x'],y=baddies[baddie]['y'],message="-"..damageTaken,alpha=255,started=0,type='damage'}
 		if kind == 'arrow' then
@@ -779,17 +782,22 @@ function arrowGet(id)
 end
 
 function moveBaddie(baddie)
-	for y=-1, 1 do
-		for x=-1, 1 do
-			if baddies[baddie]['y']+y == player['y'] then
-				if baddies[baddie]['x']+x == player['x'] then
-					baddies[baddie]['canSeePlayer'] = true
-					sawX = baddies[baddie]['x']+x
-					sawY = baddies[baddie]['y']+y
-				end
-			end
-		end
-	end
+	--baddies[baddie]['nextMove'] = findPathToGoal(baddies[baddie]['x']baddies[baddie]['y'])
+end
+
+function getSpaceFromXY(x,y)
+	return (y-1)*(screenWidth)+x
+end
+
+function getXYFromSpace(space)
+	thisXY = {}
+	thisXY['y'] = math.ceil(space/screenWidth)
+	thisXY['x'] = space-((thisXY['y']-1)*screenWidth)
+	return thisXY
+end
+
+function findPathToGoal(start,goal)
+	
 end
 
 function showOptions()
