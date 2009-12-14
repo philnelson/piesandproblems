@@ -121,25 +121,8 @@ function draw()
 	love.graphics.setColor( 255, 255, 255 )
 	love.graphics.draw("Arrow Have: "..player['arrowHave'],600,72)
 	
-	for i=1, #arrows do
-		if arrows[i]['isOut'] == true then
-			if arrows[i]['firedFrom'] == "up" then
-				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,480, 240,gridSize,gridSize)
-			end
-			if arrows[i]['firedFrom'] == "right" then
-				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,575, 240,gridSize,gridSize)
-			end
-			if arrows[i]['firedFrom'] == "down" then
-				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,288, 240,gridSize,gridSize)
-			end
-			if arrows[i]['firedFrom'] == "left" then
-				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,385, 240,gridSize,gridSize)
-			end
-			if debug == true then
-				love.graphics.draw(math.ceil(arrows[i]['x'])..", "..math.ceil(arrows[i]['y']),arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
-			end
-		end
-	end
+	-- animate arrows
+	animateArrows()
 	
 	for i=1,#baddies do
 		if #baddies > 0 then
@@ -193,6 +176,28 @@ function draw()
 	love.graphics.setColor(255,255,255)
 	love.graphics.draw(love.timer.getFPS(),900,700)
 	
+end
+
+function animateArrows()
+	for i=1, #arrows do
+		if arrows[i]['isOut'] == true then
+			if arrows[i]['firedFrom'] == "up" then
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,480, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "right" then
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,575, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "down" then
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,288, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "left" then
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,385, 240,gridSize,gridSize)
+			end
+			if debug == true then
+				love.graphics.draw(math.ceil(arrows[i]['x'])..", "..math.ceil(arrows[i]['y']),arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
+			end
+		end
+	end
 end
 
 function update(dt)
@@ -343,26 +348,25 @@ function checkArrows(dt)
 		collision = false
 		if arrows[i]['isLive'] == true then
 			if arrows[i]['firedFrom'] == 'up' then
-				if tileProperties[map[math.ceil(arrows[i]['y'])-1][math.ceil(arrows[i]['x'])]] == 'solid' then
-					arrows[i]['isLive'] = false
-					arrows[i]['y'] = math.ceil(arrows[i]['y'])
-				else
-					for j=1, #baddies do
-						if baddies[j]['vitality'] == 'alive' then
-							if math.ceil(arrows[i]['y'])-1 == baddies[j]['y'] then
-								if arrows[i]['x'] == baddies[j]['x'] then
-									arrows[i]['x'] = baddies[j]['x']
-									arrows[i]['y'] = baddies[j]['y']
-									if damageBaddie(j,'arrow') == true then
-										arrows[i]['isLive'] = false
-										collision = true
-									else
-										messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
-									end
+				for j=1, #baddies do
+					if baddies[j]['vitality'] == 'alive' then
+						if math.ceil(arrows[i]['y'])-1 == baddies[j]['y'] then
+							if arrows[i]['x'] == baddies[j]['x'] then
+								arrows[i]['x'] = baddies[j]['x']
+								arrows[i]['y'] = baddies[j]['y']
+								if damageBaddie(j,'arrow') == true then
+									arrows[i]['isLive'] = false
+									collision = true
+								else
+									messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
 								end
 							end
 						end
 					end
+				end
+				if tileProperties[map[math.ceil(arrows[i]['y'])-1][math.ceil(arrows[i]['x'])]] == 'solid' then
+					arrows[i]['isLive'] = false
+					arrows[i]['y'] = math.ceil(arrows[i]['y'])
 				end
 
 				if arrows[i]['isLive'] == true then
@@ -371,26 +375,25 @@ function checkArrows(dt)
 			end
 			
 			if arrows[i]['firedFrom'] == 'right' then
-				if tileProperties[map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])+1]] == 'solid' then
-					arrows[i]['isLive'] = false
-					arrows[i]['x'] = math.ceil(arrows[i]['x'])
-				else
-					for j=1, #baddies do
-						if baddies[j]['vitality'] == 'alive' then
-							if math.ceil(arrows[i]['x'])+1 == baddies[j]['x'] then
-								if arrows[i]['y'] == baddies[j]['y'] then
-									arrows[i]['x'] = baddies[j]['x']
-									arrows[i]['y'] = baddies[j]['y']
-									if damageBaddie(j,'arrow') == true then
-										arrows[i]['isLive'] = false
-										collision = true
-									else
-										messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
-									end
+				for j=1, #baddies do
+					if baddies[j]['vitality'] == 'alive' then
+						if math.ceil(arrows[i]['x'])+1 == baddies[j]['x'] then
+							if arrows[i]['y'] == baddies[j]['y'] then
+								arrows[i]['x'] = baddies[j]['x']
+								arrows[i]['y'] = baddies[j]['y']
+								if damageBaddie(j,'arrow') == true then
+									arrows[i]['isLive'] = false
+									collision = true
+								else
+									messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
 								end
 							end
 						end
 					end
+				end
+				if tileProperties[map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])+1]] == 'solid' then
+					arrows[i]['isLive'] = false
+					arrows[i]['x'] = math.ceil(arrows[i]['x'])
 				end
 
 				if arrows[i]['isLive'] == true then
@@ -399,25 +402,24 @@ function checkArrows(dt)
 			end
 			
 			if arrows[i]['firedFrom'] == 'down' then
-				if tileProperties[map[math.ceil(arrows[i]['y'])+1][math.ceil(arrows[i]['x'])]] == 'solid' then
-					arrows[i]['isLive'] = false
-					arrows[i]['y'] = math.ceil(arrows[i]['y'])
-				else
-					for j=1, #baddies do
-						if baddies[j]['vitality'] == 'alive' then
-							if math.ceil(arrows[i]['y']+1) == baddies[j]['y'] then
-								if arrows[i]['x'] == baddies[j]['x'] then
-									arrows[i]['y'] = baddies[j]['y']
-									if damageBaddie(j,'arrow') == true then
-										arrows[i]['isLive'] = false
-										collision = true
-									else
-										messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
-									end
+				for j=1, #baddies do
+					if baddies[j]['vitality'] == 'alive' then
+						if math.ceil(arrows[i]['y']+1) == baddies[j]['y'] then
+							if arrows[i]['x'] == baddies[j]['x'] then
+								arrows[i]['y'] = baddies[j]['y']
+								if damageBaddie(j,'arrow') == true then
+									arrows[i]['isLive'] = false
+									collision = true
+								else
+									messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
 								end
 							end
 						end
 					end
+				end
+				if tileProperties[map[math.ceil(arrows[i]['y'])+1][math.ceil(arrows[i]['x'])]] == 'solid' then
+					arrows[i]['isLive'] = false
+					arrows[i]['y'] = math.ceil(arrows[i]['y'])	
 				end
 
 				if arrows[i]['isLive'] == true then
@@ -426,26 +428,25 @@ function checkArrows(dt)
 			end
 			
 			if arrows[i]['firedFrom'] == 'left' then
-				if tileProperties[map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])-1]] == 'solid' then
-					arrows[i]['isLive'] = false
-					arrows[i]['x'] = math.ceil(arrows[i]['x'])
-				else
-					for j=1, #baddies do
-						if baddies[j]['vitality'] == 'alive' then
-							if math.ceil(arrows[i]['x']-1) == baddies[j]['x'] then
-								if arrows[i]['y'] == baddies[j]['y'] then
-									arrows[i]['x'] = baddies[j]['x']
-									arrows[i]['y'] = baddies[j]['y']
-									if damageBaddie(j,'arrow') == true then
-										arrows[i]['isLive'] = false
-										collision = true
-									else
-										messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
-									end
+				for j=1, #baddies do
+					if baddies[j]['vitality'] == 'alive' then
+						if math.ceil(arrows[i]['x']-1) == baddies[j]['x'] then
+							if arrows[i]['y'] == baddies[j]['y'] then
+								arrows[i]['x'] = baddies[j]['x']
+								arrows[i]['y'] = baddies[j]['y']
+								if damageBaddie(j,'arrow') == true then
+									arrows[i]['isLive'] = false
+									collision = true
+								else
+									messages[#messages+1] = {x=baddies[j]['x'],y=baddies[j]['y'],message="Miss!",alpha=255,started=0,type='get'}
 								end
 							end
 						end
 					end
+				end
+				if tileProperties[map[math.ceil(arrows[i]['y'])][math.ceil(arrows[i]['x'])-1]] == 'solid' then
+					arrows[i]['isLive'] = false
+					arrows[i]['x'] = math.ceil(arrows[i]['x'])				
 				end
 
 				if arrows[i]['isLive'] == true then
@@ -893,6 +894,9 @@ function checkSpaceEmpty(x,y,id)
 				end
 			end
 		end
+	end
+	if tileProperties[map[y][x]] == 'solid' then
+		occupied = occupied + 1
 	end
 	if occupied > 0 then
 		return false
