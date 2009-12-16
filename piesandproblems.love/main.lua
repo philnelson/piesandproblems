@@ -145,18 +145,6 @@ function draw()
 	
 --	revealTiles(currentFloor)
 	bakeLights(currentFloor)
-
-	if optionsOpen == true then
-		love.graphics.setColor( 255, 255, 255 )
-		love.graphics.rectangle( 1, ((width/2)-((width/2)/2)), ((height/2)-((height/2)/2)), (width/2), (height/2) )
-		love.graphics.setColor( 0, 0, 0 )
-		love.graphics.rectangle( 0, ((width/2)-((width/2)/2))+1, ((height/2)-((height/2)/2))+1, (width/2)-2, (height/2)-2 )
-		love.graphics.setColor( 255, 255, 255 )
-		love.graphics.setFont(headerFont)
-		love.graphics.draw("Options", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+48)
-		love.graphics.setFont(font)
-		love.graphics.draw("Volume: " .. (volume*100) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
-	end
 	
 	if #messages > 0 then
 		for i=1, #messages do
@@ -178,6 +166,27 @@ function draw()
 	end
 	love.graphics.setColor(255,255,255)
 	love.graphics.draw(love.timer.getFPS(),900,700)
+	
+	if optionsOpen == true then
+		love.graphics.setColor( 0, 0, 0, 125 )
+		love.graphics.rectangle( 0, 0, 0, width, height )
+		love.graphics.setColor( 255, 255, 255 )
+		love.graphics.rectangle( 1, ((width/2)-((width/2)/2)), ((height/2)-((height/2)/2)), (width/2), (height/2) )
+		love.graphics.setColor( 0, 0, 0 )
+		love.graphics.rectangle( 0, ((width/2)-((width/2)/2))+1, ((height/2)-((height/2)/2))+1, (width/2)-2, (height/2)-2 )
+		love.graphics.setColor( 255, 255, 255 )
+		love.graphics.setFont(headerFont)
+		love.graphics.draw("Options", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+48)
+		love.graphics.setFont(font)
+		volumeShow = volume*100
+		if volumeShow > 100 then
+			volumeShow = 0
+		end
+		if volumeShow < 10 then
+			volumeShow = 0
+		end
+		love.graphics.draw("Volume: " .. (volumeShow) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
+	end
 	
 end
 
@@ -483,7 +492,9 @@ function keypressed(key)
 		showOptions()
 	end
 	if key == love.key_q then
-		love.system.exit()
+		if love.keyboard.isDown(310) then 
+			love.system.exit()
+		end
 	end
 	if key == love.key_d then
 		if debug == true then
@@ -505,8 +516,8 @@ function keypressed(key)
 		if volume < .9 then
 			volume = volume + .1
 		end
-		if volume > 1 then
-			volume = 1
+		if volume == .1 then
+			volume = 0
 		end
 		love.audio.setVolume(volume)
 	end
@@ -624,7 +635,7 @@ function spawnBaddie(type)
 	while goodPos == false do
 		baddies[i]['x'] = getGoodX(baddies[i]['sizeW'])
 		baddies[i]['y'] = getGoodY(baddies[i]['sizeH'])
-		goodPos = checkSpaceEmpty(baddies[i]['x'],baddies[i]['y'],i)
+		goodPos = checkXYEmpty(baddies[i]['x'],baddies[i]['y'],i)
 	end
 end
 
@@ -782,22 +793,18 @@ function arrowGet(id)
 end
 
 function moveBaddie(baddie)
-	--baddies[baddie]['nextMove'] = findPathToGoal(baddies[baddie]['x']baddies[baddie]['y'])
-end
-
-function getSpaceFromXY(x,y)
-	return (y-1)*(screenWidth)+x
-end
-
-function getXYFromSpace(space)
-	thisXY = {}
-	thisXY['y'] = math.ceil(space/screenWidth)
-	thisXY['x'] = space-((thisXY['y']-1)*screenWidth)
-	return thisXY
+	baddieSpace = getSpaceFromXY(baddies[baddie]['x'],baddies[baddie]['y'])
+	playerSpace = getSpaceFromXY(player['x'],player['y'])
+	findPathToGoal(baddieSpace,playerSpace)
 end
 
 function findPathToGoal(start,goal)
+	closedList = {}
+	openList = {start}
 	
+	for i=1, #openList do
+		
+	end
 end
 
 function showOptions()
@@ -892,7 +899,7 @@ function getGoodY(spriteHeight)
 	return thisY
 end
 
-function checkSpaceEmpty(x,y,id)
+function checkXYEmpty(x,y,id)
 	occupied = 0
 	for i=1, #baddies do
 		if i ~= id then
@@ -911,6 +918,33 @@ function checkSpaceEmpty(x,y,id)
 	else
 		return true
 	end
+end
+
+function checkSpaceEmpty(space)
+	for i=1, #baddies do
+		if getSpaceFromXY(baddies[i]['x'],baddies[i]['y']) == space then
+			return false
+		end
+	end
+	if getSpaceFromXY(player['x'],player['y']) == space then
+		return false
+	end
+	spaceXY = getXYFromSpace(space)
+	if map[spaceXY['y']][spaceXY['x']] == 'solid' then
+		return false
+	end
+	return true
+end
+
+function getSpaceFromXY(x,y)
+	return (y-1)*(screenWidth)+x
+end
+
+function getXYFromSpace(space)
+	thisXY = {}
+	thisXY['y'] = math.ceil(space/screenWidth)
+	thisXY['x'] = space-((thisXY['y']-1)*screenWidth)
+	return thisXY
 end
 
 function round(num, idp)
