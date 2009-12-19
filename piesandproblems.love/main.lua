@@ -1,3 +1,4 @@
+love.filesystem.require("ai.lua")
 timePassed = 0
 playerMoved = 0
 
@@ -69,6 +70,14 @@ baddiesKilled = 0
 doorOpened = false
 mapGenerated = false
 
+-- A* algotithm
+moves = {}
+moves.path = {{2,11},{3,10},{5,10},{6,11},{6,13},{5,14},{3,14},{2,13}}
+moves.xsize=table.getn(moves.path[1]) -- horizontal map size
+moves.ysize=table.getn(moves.path)	   -- vertical map size
+
+testo =  "status"
+
 function load()
 	spawnPlayer()
 	loadSounds()
@@ -108,14 +117,13 @@ function draw()
 	love.graphics.setColor(0,0,255)
 	love.graphics.draw("DEF: "..baddies[1]['def'],205,48)
 	love.graphics.setColor( 255, 255, 255 )
-	if baddies[1]['canSeePlayer'] == true then
-		love.graphics.draw('can see you!',5,72)
-	end
+	love.graphics.draw(love.timer.getTime(),5,68)
+	love.graphics.draw(baddies[1]['lastMove'],5,88)
 	
 	playerSpace = getSpaceFromXY(player['x'],player['y'])
 	playerXY = getXYFromSpace(playerSpace)
 	
-	love.graphics.draw("You: "..player['x']..", "..player['y'].." ("..playerSpace..") "..playerXY['x']..", "..playerXY['y'], 600, 24)
+	love.graphics.draw("You: "..player['x']..", "..player['y'].." ("..playerSpace..") "..tileProperties[map[player['y']][player['x']]], 600, 24)
 	love.graphics.draw("HP: "..player['hp'].."/"..player['totalHP'],600,48)
 	love.graphics.setColor(255,0,0)
 	love.graphics.draw("ATK: "..player['atk'],715,48)
@@ -187,32 +195,33 @@ function draw()
 		end
 		love.graphics.draw("Volume: " .. (volumeShow) .."%", ((width/2)-((width/2)/2))+16, ((height/2)-((height/2)/2))+96)
 	end
-	
-end
 
-function animateArrows()
-	for i=1, #arrows do
-		if arrows[i]['isOut'] == true then
-			if arrows[i]['firedFrom'] == "up" then
-				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,480, 240,gridSize,gridSize)
-			end
-			if arrows[i]['firedFrom'] == "right" then
-				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,575, 240,gridSize,gridSize)
-			end
-			if arrows[i]['firedFrom'] == "down" then
-				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,288, 240,gridSize,gridSize)
-			end
-			if arrows[i]['firedFrom'] == "left" then
-				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,385, 240,gridSize,gridSize)
-			end
-			if debug == true then
-				love.graphics.draw(math.ceil(arrows[i]['x'])..", "..math.ceil(arrows[i]['y']),arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
+	for k in pairs(baddies) do
+		if baddies[k]['vitality'] == 'alive' then
+			if baddies[k]['lastMove'] <= (love.timer.getTime()-.7) then
+				baddies[k]['lastMove'] = love.timer.getTime()
+				moveBaddie(k)
 			end
 		end
+	end	
+
+	testo =  "Path: "
+	if moves.path == nil then
+		testo = "NO PATH"
+	else
+		local color1 = love.graphics.getColor()
+		--love.graphics.setColor( 100, 205, 0 ) 
+		for i,v in ipairs(moves.path ) do
+			testo = testo .. " ( "  .. tostring(v.x) .. " , " .. tostring(v.y) .. " ) "
+		end
+		love.graphics.setColor( color1) 
 	end
+	love.graphics.draw(testo  ,10,110)
+
 end
 
 function update(dt)
+	timePassed = timePassed+dt
 	checkArrows(dt)
 	for i=1,#baddies do
 		if baddies[i]['vitality'] == 'dead' then
@@ -235,7 +244,6 @@ function update(dt)
 	if love.joystick.getNumJoysticks( ) > 0 then
 		checkJoystick()
 	end
-	timePassed = timePassed+dt
 	
 	if #messages > 0 then
 		for i=1, #messages do
@@ -245,10 +253,6 @@ function update(dt)
 			messages[i]['alpha'] = messages[i]['alpha'] - 1
 			messages[i]['y'] = messages[i]['y']-.01
 		end
-	end
-	
-	for i=1, #baddies do
-		moveBaddie(i)
 	end
 	
 	if baddiesKilled > 0 then
@@ -307,10 +311,6 @@ function revealTiles(floor)
 	end
 	love.graphics.setColor(255,255, 255)
 
-end
-
-function moveTowardPlayer(thisX, thisY)
-	
 end
 
 function checkJoystick()
@@ -469,67 +469,6 @@ function checkArrows(dt)
 	end
 end
 
-function keypressed(key)
-	if key == love.key_right then 
-		movePlayer("right")
-	end
-	if key == love.key_left then 
-		movePlayer("left")
-	end
-	if key == love.key_up then 
-		movePlayer("up")
-	end
-	if key == love.key_down then 
-		movePlayer("down")
-	end
-	if key == love.key_space then 
-		playerShoot()
-	end
-	if key == love.key_r then
-		love.system.restart( )
-	end
-	if key == love.key_o then
-		showOptions()
-	end
-	if key == love.key_q then
-		if love.keyboard.isDown(310) then 
-			love.system.exit()
-		end
-	end
-	if key == love.key_d then
-		if debug == true then
-			debug = false
-		else
-			debug = true
-		end
-	end
-	if key == 57 then
-		if volume > .1 then
-			volume = volume - .1
-		end
-		if volume > 1 then
-			volume = 0
-		end
-		love.audio.setVolume(volume)
-	end
-	if key == 48 then
-		if volume < .9 then
-			volume = volume + .1
-		end
-		if volume == .1 then
-			volume = 0
-		end
-		love.audio.setVolume(volume)
-	end
-	if key == love.key_s then
-		love.graphics.screenshot(os.time()..'.bmp')
-	end
-	if key == love.key_f then
-		love.graphics.toggleFullscreen( )
-	end
-	lastkey = key
-end
-
 function loadSounds()
 	overWorldTheme = love.audio.newSound('Mr Fluff.ogg')
 
@@ -624,7 +563,7 @@ end
 function spawnBaddie(type)
 	i = #baddies+1
 	if type == 'orc' then
-		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,lastSawPlayer='none',scale=1,deathAnimation=0,deathSpriteX=(15*gridSize),deathSpriteY=(9*gridSize),canSeePlayer=false}
+		baddies[i] = {x=0,y=0,spriteX=(gridSize*10),spriteY=(gridSize*8),vitality='alive',hp=diceRoll(2,3),atk=diceRoll(1,3),def=diceRoll(1,3),level=1,status=0,facing='right',angle=0,sizeH=1,sizeW=1,lastSawPlayer='none',scale=1,deathAnimation=0,deathSpriteX=(15*gridSize),deathSpriteY=(9*gridSize),canSeePlayer=false,lastMove=0}
 		
 		baddies[i]['totalHP'] = baddies[i]['hp']
 		baddiesAlive = baddiesAlive+1
@@ -766,6 +705,28 @@ function movePlayer(direction)
 	checkForPickups()
 end
 
+function animateArrows()
+	for i=1, #arrows do
+		if arrows[i]['isOut'] == true then
+			if arrows[i]['firedFrom'] == "up" then
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,480, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "right" then
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,575, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "down" then
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,288, 240,gridSize,gridSize)
+			end
+			if arrows[i]['firedFrom'] == "left" then
+				love.graphics.draws(objects, arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24,385, 240,gridSize,gridSize)
+			end
+			if debug == true then
+				love.graphics.draw(math.ceil(arrows[i]['x'])..", "..math.ceil(arrows[i]['y']),arrows[i]['x']*gridSize-24,arrows[i]['y']*gridSize-24)
+			end
+		end
+	end
+end
+
 function checkForPickups()
 	arrowsGot = 0
 	for i=1, #arrows do
@@ -793,17 +754,43 @@ function arrowGet(id)
 end
 
 function moveBaddie(baddie)
-	baddieSpace = getSpaceFromXY(baddies[baddie]['x'],baddies[baddie]['y'])
-	playerSpace = getSpaceFromXY(player['x'],player['y'])
-	findPathToGoal(baddieSpace,playerSpace)
+	moves.path = CalcPath(CalcMoves(mappy.array,baddies[baddie]['x'],baddies[baddie]['y'],player['x'],player['y']))
+	if moves.path[1]['x'] == player['x'] then
+		if moves.path[1]['y'] == player['y'] then
+			attackPlayer(baddie)
+		end
+	end
+	for k in pairs(baddies) do
+		if moves.path[1]['x'] == baddies[k]['x'] then
+			if moves.path[1]['y'] == baddies[k]['y'] then
+				return nil
+			end
+		end
+	end
+	baddies[baddie]['x'] = moves.path[1]['x']
+	baddies[baddie]['y'] = moves.path[1]['y']
 end
 
-function findPathToGoal(start,goal)
-	closedList = {}
-	openList = {start}
-	
-	for i=1, #openList do
-		
+function attackPlayer()
+	attackRoll = math.random(1,baddie['atk'])+1
+	defRoll = math.random(1,player['def'])
+	if attackRoll > defRoll then
+		damageTaken = diceRoll(1,1)
+		player['hp'] = player['hp']-damageTaken
+		messages[#messages+1] = {x=player['x'],y=player['y'],message="-"..damageTaken,alpha=255,started=0,type='damage'}
+		if kind == 'arrow' then
+			love.audio.play(ouch1)
+		end
+		if kind == 'sword' then
+			love.audio.play(weaponHitSound)
+		end
+		if player['hp'] <= 0 then
+			killPlayer()
+		end
+		return true
+	else
+		baddieMissed = true
+		return false
 	end
 end
 
@@ -921,19 +908,24 @@ function checkXYEmpty(x,y,id)
 end
 
 function checkSpaceEmpty(space)
+	occupied = 0
 	for i=1, #baddies do
 		if getSpaceFromXY(baddies[i]['x'],baddies[i]['y']) == space then
-			return false
+			occupied = 1
 		end
 	end
 	if getSpaceFromXY(player['x'],player['y']) == space then
-		return false
+		occupied = 1
 	end
 	spaceXY = getXYFromSpace(space)
-	if map[spaceXY['y']][spaceXY['x']] == 'solid' then
-		return false
+	if tileProperties[map[spaceXY['y']][spaceXY['x']]] == 'solid' then
+		occupied = 1
 	end
-	return true
+	if occupied == 1 then
+		return false
+	else
+		return true
+	end
 end
 
 function getSpaceFromXY(x,y)
@@ -945,6 +937,67 @@ function getXYFromSpace(space)
 	thisXY['y'] = math.ceil(space/screenWidth)
 	thisXY['x'] = space-((thisXY['y']-1)*screenWidth)
 	return thisXY
+end
+
+function keypressed(key)
+	if key == love.key_right then 
+		movePlayer("right")
+	end
+	if key == love.key_left then 
+		movePlayer("left")
+	end
+	if key == love.key_up then 
+		movePlayer("up")
+	end
+	if key == love.key_down then 
+		movePlayer("down")
+	end
+	if key == love.key_space then 
+		playerShoot()
+	end
+	if key == love.key_r then
+		love.system.restart( )
+	end
+	if key == love.key_o then
+		showOptions()
+	end
+	if key == love.key_q then
+		if love.keyboard.isDown(310) then 
+			love.system.exit()
+		end
+	end
+	if key == love.key_d then
+		if debug == true then
+			debug = false
+		else
+			debug = true
+		end
+	end
+	if key == 57 then
+		if volume > .1 then
+			volume = volume - .1
+		end
+		if volume > 1 then
+			volume = 0
+		end
+		love.audio.setVolume(volume)
+	end
+	if key == 48 then
+		if volume < .9 then
+			volume = volume + .1
+		end
+		if volume == .1 then
+			volume = 0
+		end
+		love.audio.setVolume(volume)
+	end
+	if key == love.key_s then
+		love.graphics.screenshot(os.time()..'.bmp')
+	end
+	if key == love.key_f then
+		love.graphics.toggleFullscreen( )
+	end
+	lastkey = key
 end
 
 function round(num, idp)
