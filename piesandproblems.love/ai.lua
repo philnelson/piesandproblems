@@ -44,10 +44,6 @@ openlist = {}
 
 function CalcMoves(calcMap, px, py, tx, ty) -- Based on code of LMelior but made 	something really different, still thx LMelior!
 
-	if tileProperties[map[ty][tx]] == 'solid' then -- If the target node isn't walkable then return nil
-		return nil
-	end
-
 	-- variables 
 	local openlist = {} -- Initialize table to store possible moves
 	local closedlist = {} -- Initialize table to store checked nodes
@@ -98,16 +94,19 @@ function CalcMoves(calcMap, px, py, tx, ty) -- Based on code of LMelior but made
 				break
 			end
 		end
-
+		
+		 -- Booleans defining if they're OK to add
+		 -- (must be reset for each while loop)
 		local rightOK = true
-		local leftOK = true -- Booleans defining if they're OK to add
-		local downOK = true -- (must be reset for each while loop)
+		local leftOK = true
+		local downOK = true
 		local upOK = true
 
 		local upLeftOK = true
 		local upRightOK = true
 		local downLeftOK = true
 		local downRightOK = true
+		
 		-- Look through closedlist
 		if closedk > 0 then
 			for k = 1, closedk do
@@ -162,32 +161,88 @@ function CalcMoves(calcMap, px, py, tx, ty) -- Based on code of LMelior but made
 		end
 		-- If it IS on the calcMap, check calcMap for obstacles
 		--(Lua returns an error if you try to access a table position that doesn't exist, so you can't combine it with above)
-		
-		if curbase.x + 1 <= xsize and calcMap[curbase.y][curbase.x + 1] ~= 0 then
-			rightOK = false
+		if rightOK == true then
+			if tileProperties[map.array[curbase.y][curbase.x + 1]] == 'solid' then
+				rightOK = false
+			end
+			for k in pairs(baddies) do
+				if baddies[k]['x'] == curbase.x + 1 and baddies[k]['y'] == curbase.y then
+					rightOK = false
+				end
+			end
 		end
-		if curbase.x - 1 >= 1 and calcMap[curbase.y][curbase.x - 1] ~= 0 then
-			leftOK = false
+		if leftOK == true then
+			if tileProperties[map.array[curbase.y][curbase.x - 1]] == 'solid' then
+				leftOK = false
+			end
+			for k in pairs(baddies) do
+				if baddies[k]['x'] == curbase.x - 1 and baddies[k]['y'] == curbase.y then
+					leftOK = false
+				end
+			end
 		end
-		if curbase.y + 1 <= ysize and calcMap[curbase.y + 1][curbase.x] ~= 0 then
-			downOK = false
+		if downOK == true then
+			if tileProperties[map.array[curbase.y + 1][curbase.x]] == 'solid' then
+				downOK = false
+			end
+			for k in pairs(baddies) do
+				if baddies[k]['x'] == curbase.x and baddies[k]['y'] == curbase.y + 1 then
+					downOK = false
+				end
+			end
 		end
-		if curbase.y - 1 >= 1 and calcMap[curbase.y - 1][curbase.x] ~= 0 then
-			upOK = false
+		if upOK == true then
+			if tileProperties[map.array[curbase.y - 1][curbase.x]] == 'solid' then
+				upOK = false
+			end
+			for k in pairs(baddies) do
+				if baddies[k]['x'] == curbase.x and baddies[k]['y'] == curbase.y - 1 then
+					upOK = false
+				end
+			end
 		end
 		-- Diagonals
-		if curbase.x - 1 >= 1 and curbase.y - 1 >= 1 and calcMap[curbase.y - 1][curbase.x - 1] ~= 0 then
-			upLeftOK = false
+		if upLeftOK == true then
+			if tileProperties[map.array[curbase.y - 1][curbase.x - 1]] == 'solid' then
+				upLeftOK = false
+			end
+			for k in pairs(baddies) do
+				if baddies[k]['x'] == curbase.x-1 and baddies[k]['y'] == curbase.y - 1 then
+					upLeftOK = false
+				end
+			end
 		end
-		if curbase.x + 1 <= xsize and curbase.y - 1 >= 1 and calcMap[curbase.y - 1][curbase.x + 1] ~= 0 then
-			upRightOK = false
+		if upRightOK == true then
+			if tileProperties[map.array[curbase.y - 1][curbase.x + 1]] == 'solid' then
+				upRightOK = false
+			end
+			for k in pairs(baddies) do
+				if baddies[k]['x'] == curbase.x + 1 and baddies[k]['y'] == curbase.y - 1 then
+					upRightOK = false
+				end
+			end
 		end
-		if curbase.x - 1 >= 1 and curbase.y + 1 <= ysize and calcMap[curbase.y + 1][curbase.x - 1] ~= 0 then
-			downLeftOK = false
+		if downLeftOK == true then
+			if tileProperties[map.array[curbase.y + 1][curbase.x - 1]] == 'solid' then
+				downLeftOK = false
+			end
+			for k in pairs(baddies) do
+				if baddies[k]['x'] == curbase.x - 1 and baddies[k]['y'] == curbase.y + 1 then
+					downLeftOK = false
+				end
+			end
 		end
-		if curbase.x + 1 <= xsize and curbase.y + 1 <= ysize and calcMap[curbase.y +1][curbase.x + 1] ~= 0 then
-			downRightOK = false
+		if downRightOK == true then
+			if tileProperties[map.array[curbase.y +1][curbase.x + 1]] == 'solid' then
+				downRightOK = false
+			end
+			for k in pairs(baddies) do
+				if baddies[k]['x'] == curbase.x + 1 and baddies[k]['y'] == curbase.y + 1 then
+					downRightOK = false
+				end
+			end
 		end
+		
 		-- check if the move from the current base is shorter then from the former parent
 		tempG = curbase.g + 1
 		tempDiagG = curbase.g + 1.4
